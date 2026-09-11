@@ -1,13 +1,21 @@
 package com.hygiene.automation;
 
+import java.time.Duration;
+
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class ProfileNavigator {
 
     private final WebDriver driver;
+    private final WebDriverWait wait;
 
     public ProfileNavigator(WebDriver driver) {
         this.driver = driver;
+        this.wait = new WebDriverWait(
+                driver,
+                Duration.ofSeconds(10)
+        );
     }
 
     public boolean openProfile(String username) {
@@ -19,7 +27,10 @@ public class ProfileNavigator {
 
         username = username.trim();
 
-        // Basic username validation
+        if (username.startsWith("@")) {
+            username = username.substring(1);
+        }
+
         if (!username.matches("[A-Za-z0-9._]+")) {
             System.out.println(
                     "Invalid username format: " + username
@@ -27,6 +38,8 @@ public class ProfileNavigator {
             return false;
         }
 
+        final String targetUsername = username;
+        
         String profileUrl =
                 "https://www.instagram.com/"
                 + username
@@ -41,6 +54,21 @@ public class ProfileNavigator {
 
             driver.get(profileUrl);
 
+            /*
+             * Wait until navigation actually reaches
+             * the expected profile URL.
+             */
+            wait.until(driver ->
+                    normalizeUrl(driver.getCurrentUrl())
+                            .endsWith(
+                                    "/" + targetUsername.toLowerCase() + "/"
+                            )
+            );
+
+            System.out.println(
+                    "Navigation completed: @" + username
+            );
+
             System.out.println(
                     "Current URL: " + driver.getCurrentUrl()
             );
@@ -49,13 +77,28 @@ public class ProfileNavigator {
 
         } catch (Exception e) {
 
-            System.err.println(
-                    "Unable to open profile: @" + username
+            System.out.println(
+                    "Navigation timed out or failed: @"
+                    + username
             );
 
-            e.printStackTrace();
+            System.out.println(
+                    "Current URL: " + driver.getCurrentUrl()
+            );
 
             return false;
         }
+    }
+
+    private String normalizeUrl(String url) {
+
+        if (url == null) {
+            return "";
+        }
+
+        return url
+                .toLowerCase()
+                .split("\\?")[0]
+                .split("#")[0];
     }
 }

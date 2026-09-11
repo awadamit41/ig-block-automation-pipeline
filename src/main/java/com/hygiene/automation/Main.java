@@ -81,16 +81,21 @@ public class Main {
                     continue;
                 }
 
-                /*
-                 * Give the page a moment to load.
-                 *
-                 * We'll replace this with explicit waits
-                 * later.
-                 */
-                Thread.sleep(2500);
-
                 boolean verified =
                         verifier.verifyProfile(username);
+
+                if (verified) {
+
+                    System.out.println(
+                            "STATUS: PROFILE VERIFIED"
+                    );
+
+                } else {
+
+                    System.out.println(
+                            "STATUS: PROFILE NOT VERIFIED"
+                    );
+                }
 
                 if (verified) {
 

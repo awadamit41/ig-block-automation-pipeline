@@ -25,52 +25,53 @@ public class ProfileNavigator {
             return false;
         }
 
-        username = username.trim();
+        String targetUsername = username.trim();
 
-        if (username.startsWith("@")) {
-            username = username.substring(1);
+        if (targetUsername.startsWith("@")) {
+            targetUsername = targetUsername.substring(1);
         }
 
-        if (!username.matches("[A-Za-z0-9._]+")) {
+        if (!targetUsername.matches("[A-Za-z0-9._]+")) {
             System.out.println(
-                    "Invalid username format: " + username
+                    "Invalid username format: " + targetUsername
             );
             return false;
         }
 
-        final String targetUsername = username;
-        
+        final String normalizedUsername =
+                targetUsername.toLowerCase();
+
         String profileUrl =
                 "https://www.instagram.com/"
-                + username
+                + targetUsername
                 + "/";
 
         try {
 
             System.out.println();
             System.out.println("----------------------------------------------");
-            System.out.println("Opening profile: @" + username);
+            System.out.println(
+                    "Opening profile: @" + targetUsername
+            );
             System.out.println("----------------------------------------------");
 
             driver.get(profileUrl);
 
-            /*
-             * Wait until navigation actually reaches
-             * the expected profile URL.
-             */
-            wait.until(driver ->
-                    normalizeUrl(driver.getCurrentUrl())
+            wait.until(currentDriver ->
+                    normalizeUrl(currentDriver.getCurrentUrl())
                             .endsWith(
-                                    "/" + targetUsername.toLowerCase() + "/"
+                                    "/" + normalizedUsername + "/"
                             )
             );
 
             System.out.println(
-                    "Navigation completed: @" + username
+                    "Navigation completed: @"
+                    + targetUsername
             );
 
             System.out.println(
-                    "Current URL: " + driver.getCurrentUrl()
+                    "Current URL: "
+                    + driver.getCurrentUrl()
             );
 
             return true;
@@ -79,11 +80,12 @@ public class ProfileNavigator {
 
             System.out.println(
                     "Navigation timed out or failed: @"
-                    + username
+                    + targetUsername
             );
 
             System.out.println(
-                    "Current URL: " + driver.getCurrentUrl()
+                    "Current URL: "
+                    + driver.getCurrentUrl()
             );
 
             return false;

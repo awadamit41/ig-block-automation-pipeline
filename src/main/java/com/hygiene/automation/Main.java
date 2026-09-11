@@ -110,7 +110,6 @@ public class Main {
                     );
                 }
 
-                Thread.sleep(1500);
             }
 
             System.out.println();

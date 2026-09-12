@@ -10,13 +10,16 @@ public class ProfileNavigator {
     private final WebDriver driver;
     private final WebDriverWait wait;
 
-    public ProfileNavigator(WebDriver driver) {
-        this.driver = driver;
-        this.wait = new WebDriverWait(
-                driver,
-                Duration.ofSeconds(10)
-        );
-    }
+public ProfileNavigator(
+        WebDriver driver,
+        int timeoutSeconds
+) {
+    this.driver = driver;
+    this.wait = new WebDriverWait(
+            driver,
+            Duration.ofSeconds(timeoutSeconds)
+    );
+}
 
     public boolean openProfile(String username) {
 
@@ -67,11 +70,6 @@ public class ProfileNavigator {
             System.out.println(
                     "Navigation completed: @"
                     + targetUsername
-            );
-
-            System.out.println(
-                    "Current URL: "
-                    + driver.getCurrentUrl()
             );
 
             return true;

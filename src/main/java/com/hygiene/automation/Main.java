@@ -19,14 +19,24 @@ public class Main {
         try {
 
             // -----------------------------------------
-            // 1. Start Microsoft Edge
+            // 1. Load configuration
+            // -----------------------------------------
+
+            AppConfig config =
+                    new AppConfig("config.properties");
+
+            System.out.println("Configuration loaded.");
+
+            // -----------------------------------------
+            // 2. Start Edge
             // -----------------------------------------
 
             EdgeOptions options = new EdgeOptions();
 
             String userProfile =
                     System.getProperty("user.home")
-                    + "\\social-media-hygiene-edge-profile";
+                    + "\\"
+                    + config.getProfileDirectory();
 
             options.addArguments(
                     "--user-data-dir=" + userProfile
@@ -41,29 +51,35 @@ public class Main {
             );
 
             // -----------------------------------------
-            // 2. Initialize components
+            // 3. Create components
             // -----------------------------------------
 
             TargetLoader loader =
-                    new TargetLoader("targets.csv");
+                    new TargetLoader(
+                            config.getTargetFile()
+                    );
 
             ProfileNavigator navigator =
-                    new ProfileNavigator(driver);
+                    new ProfileNavigator(
+                            driver,
+                            config.getWaitTimeoutSeconds()
+                    );
 
             ProfileVerifier verifier =
                     new ProfileVerifier(driver);
 
-            /*
-             * Dry-run mode remains enabled.
-             */
             ActionManager actionManager =
-                    new ActionManager(true);
+                    new ActionManager(
+                            config.isDryRun()
+                    );
 
             ResultLogger logger =
-                    new ResultLogger("logs/results.csv");
+                    new ResultLogger(
+                            config.getLogFile()
+                    );
 
             // -----------------------------------------
-            // 3. Load targets
+            // 4. Load targets
             // -----------------------------------------
 
             List<String> targets =
@@ -74,28 +90,21 @@ public class Main {
                     "Targets loaded: " + targets.size()
             );
 
+            System.out.println(
+                    "Dry-run mode: "
+                    + config.isDryRun()
+            );
+
             // -----------------------------------------
-            // 4. Process targets
+            // 5. Process targets
             // -----------------------------------------
 
             for (String username : targets) {
 
                 System.out.println();
                 System.out.println(
-                        "=============================================="
-                );
-
-                System.out.println(
                         "Processing @" + username
                 );
-
-                System.out.println(
-                        "=============================================="
-                );
-
-                // -------------------------------------
-                // Navigation
-                // -------------------------------------
 
                 boolean opened =
                         navigator.openProfile(username);
@@ -116,29 +125,14 @@ public class Main {
                     continue;
                 }
 
-                // -------------------------------------
-                // Verification
-                // -------------------------------------
-
                 boolean verified =
                         verifier.verifyProfile(username);
 
-                if (verified) {
-
-                    System.out.println(
-                            "STATUS: PROFILE VERIFIED"
-                    );
-
-                } else {
-
-                    System.out.println(
-                            "STATUS: PROFILE NOT VERIFIED"
-                    );
-                }
-
-                // -------------------------------------
-                // Dry-run action
-                // -------------------------------------
+                System.out.println(
+                        verified
+                                ? "STATUS: PROFILE VERIFIED"
+                                : "STATUS: PROFILE NOT VERIFIED"
+                );
 
                 ActionResult result =
                         actionManager.process(
@@ -150,10 +144,6 @@ public class Main {
                         "ACTION RESULT: " + result
                 );
 
-                // -------------------------------------
-                // Logging
-                // -------------------------------------
-
                 logger.log(
                         username,
                         "SUCCESS",
@@ -164,21 +154,13 @@ public class Main {
                 );
             }
 
-            // -----------------------------------------
-            // 5. Complete
-            // -----------------------------------------
-
             System.out.println();
             System.out.println("==============================================");
             System.out.println(" Processing completed.");
-            System.out.println(
-                    "Results saved to logs/results.csv"
-            );
             System.out.println("==============================================");
 
         } catch (Exception e) {
 
-            System.err.println();
             System.err.println(
                     "Application failed."
             );
@@ -188,12 +170,8 @@ public class Main {
         } finally {
 
             if (driver != null) {
-
                 driver.quit();
-
-                System.out.println(
-                        "Edge closed."
-                );
+                System.out.println("Edge closed.");
             }
         }
     }

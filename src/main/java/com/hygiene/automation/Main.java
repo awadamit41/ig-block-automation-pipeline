@@ -19,7 +19,7 @@ public class Main {
         try {
 
             // -----------------------------------------
-            // 1. Start Edge
+            // 1. Start Microsoft Edge
             // -----------------------------------------
 
             EdgeOptions options = new EdgeOptions();
@@ -32,33 +32,47 @@ public class Main {
                     "--user-data-dir=" + userProfile
             );
 
+            System.out.println("Starting Edge...");
+
             driver = new EdgeDriver(options);
 
-            System.out.println("Edge started.");
+            System.out.println(
+                    "Edge started successfully."
+            );
 
             // -----------------------------------------
-            // 2. Load targets
+            // 2. Initialize components
             // -----------------------------------------
 
             TargetLoader loader =
                     new TargetLoader("targets.csv");
-
-            List<String> targets =
-                    loader.loadTargets();
-
-            System.out.println(
-                    "Targets loaded: " + targets.size()
-            );
-
-            // -----------------------------------------
-            // 3. Create components
-            // -----------------------------------------
 
             ProfileNavigator navigator =
                     new ProfileNavigator(driver);
 
             ProfileVerifier verifier =
                     new ProfileVerifier(driver);
+
+            /*
+             * Dry-run mode remains enabled.
+             */
+            ActionManager actionManager =
+                    new ActionManager(true);
+
+            ResultLogger logger =
+                    new ResultLogger("logs/results.csv");
+
+            // -----------------------------------------
+            // 3. Load targets
+            // -----------------------------------------
+
+            List<String> targets =
+                    loader.loadTargets();
+
+            System.out.println();
+            System.out.println(
+                    "Targets loaded: " + targets.size()
+            );
 
             // -----------------------------------------
             // 4. Process targets
@@ -68,18 +82,43 @@ public class Main {
 
                 System.out.println();
                 System.out.println(
+                        "=============================================="
+                );
+
+                System.out.println(
                         "Processing @" + username
                 );
+
+                System.out.println(
+                        "=============================================="
+                );
+
+                // -------------------------------------
+                // Navigation
+                // -------------------------------------
 
                 boolean opened =
                         navigator.openProfile(username);
 
                 if (!opened) {
+
                     System.out.println(
-                            "SKIPPED: Could not open profile."
+                            "STATUS: NAVIGATION FAILED"
                     );
+
+                    logger.log(
+                            username,
+                            "FAILED",
+                            "NOT_CHECKED",
+                            ActionResult.FAILED
+                    );
+
                     continue;
                 }
+
+                // -------------------------------------
+                // Verification
+                // -------------------------------------
 
                 boolean verified =
                         verifier.verifyProfile(username);
@@ -97,30 +136,49 @@ public class Main {
                     );
                 }
 
-                if (verified) {
+                // -------------------------------------
+                // Dry-run action
+                // -------------------------------------
 
-                    System.out.println(
-                            "STATUS: READY FOR NEXT STAGE"
-                    );
+                ActionResult result =
+                        actionManager.process(
+                                username,
+                                verified
+                        );
 
-                } else {
+                System.out.println(
+                        "ACTION RESULT: " + result
+                );
 
-                    System.out.println(
-                            "STATUS: SKIPPED"
-                    );
-                }
+                // -------------------------------------
+                // Logging
+                // -------------------------------------
 
+                logger.log(
+                        username,
+                        "SUCCESS",
+                        verified
+                                ? "VERIFIED"
+                                : "NOT_VERIFIED",
+                        result
+                );
             }
 
-            System.out.println();
-            System.out.println(
-                    "Profile verification test completed."
-            );
+            // -----------------------------------------
+            // 5. Complete
+            // -----------------------------------------
 
-            Thread.sleep(3000);
+            System.out.println();
+            System.out.println("==============================================");
+            System.out.println(" Processing completed.");
+            System.out.println(
+                    "Results saved to logs/results.csv"
+            );
+            System.out.println("==============================================");
 
         } catch (Exception e) {
 
+            System.err.println();
             System.err.println(
                     "Application failed."
             );
@@ -130,8 +188,12 @@ public class Main {
         } finally {
 
             if (driver != null) {
+
                 driver.quit();
-                System.out.println("Edge closed.");
+
+                System.out.println(
+                        "Edge closed."
+                );
             }
         }
     }

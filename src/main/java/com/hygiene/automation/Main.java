@@ -18,20 +18,11 @@ public class Main {
 
         try {
 
-            // -----------------------------------------
-            // 1. Load configuration
-            // -----------------------------------------
-
             AppConfig config =
                     new AppConfig("config.properties");
 
-            System.out.println("Configuration loaded.");
-
-            // -----------------------------------------
-            // 2. Start Edge
-            // -----------------------------------------
-
-            EdgeOptions options = new EdgeOptions();
+            EdgeOptions options =
+                    new EdgeOptions();
 
             String userProfile =
                     System.getProperty("user.home")
@@ -44,15 +35,12 @@ public class Main {
 
             System.out.println("Starting Edge...");
 
-            driver = new EdgeDriver(options);
+            driver =
+                    new EdgeDriver(options);
 
             System.out.println(
                     "Edge started successfully."
             );
-
-            // -----------------------------------------
-            // 3. Create components
-            // -----------------------------------------
 
             TargetLoader loader =
                     new TargetLoader(
@@ -78,16 +66,21 @@ public class Main {
                             config.getLogFile()
                     );
 
-            // -----------------------------------------
-            // 4. Load targets
-            // -----------------------------------------
+            TargetProcessor processor =
+                    new TargetProcessor(
+                            navigator,
+                            verifier,
+                            actionManager,
+                            logger
+                    );
 
             List<String> targets =
                     loader.loadTargets();
 
             System.out.println();
             System.out.println(
-                    "Targets loaded: " + targets.size()
+                    "Targets loaded: "
+                    + targets.size()
             );
 
             System.out.println(
@@ -96,61 +89,27 @@ public class Main {
             );
 
             // -----------------------------------------
-            // 5. Process targets
+            // Process all targets
             // -----------------------------------------
 
             for (String username : targets) {
 
-                System.out.println();
-                System.out.println(
-                        "Processing @" + username
-                );
-
-                boolean opened =
-                        navigator.openProfile(username);
-
-                if (!opened) {
-
-                    System.out.println(
-                            "STATUS: NAVIGATION FAILED"
-                    );
-
-                    logger.log(
-                            username,
-                            "FAILED",
-                            "NOT_CHECKED",
-                            ActionResult.FAILED
-                    );
-
-                    continue;
-                }
-
-                boolean verified =
-                        verifier.verifyProfile(username);
+                ProcessingResult result =
+                        processor.process(username);
 
                 System.out.println(
-                        verified
-                                ? "STATUS: PROFILE VERIFIED"
-                                : "STATUS: PROFILE NOT VERIFIED"
+                        "STATUS: "
+                        + result.getStatus()
                 );
-
-                ActionResult result =
-                        actionManager.process(
-                                username,
-                                verified
-                        );
 
                 System.out.println(
-                        "ACTION RESULT: " + result
+                        "ACTION: "
+                        + result.getActionResult()
                 );
 
-                logger.log(
-                        username,
-                        "SUCCESS",
-                        verified
-                                ? "VERIFIED"
-                                : "NOT_VERIFIED",
-                        result
+                System.out.println(
+                        "MESSAGE: "
+                        + result.getMessage()
                 );
             }
 
@@ -162,7 +121,7 @@ public class Main {
         } catch (Exception e) {
 
             System.err.println(
-                    "Application failed."
+                    "Application startup failed."
             );
 
             e.printStackTrace();
@@ -170,8 +129,12 @@ public class Main {
         } finally {
 
             if (driver != null) {
+
                 driver.quit();
-                System.out.println("Edge closed.");
+
+                System.out.println(
+                        "Edge closed."
+                );
             }
         }
     }

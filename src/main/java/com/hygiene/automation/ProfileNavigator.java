@@ -5,23 +5,21 @@ import java.time.Duration;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-public class ProfileNavigator {
+public class ProfileNavigator implements Navigator {
 
     private final WebDriver driver;
     private final WebDriverWait wait;
 
-public ProfileNavigator(
-        WebDriver driver,
-        int timeoutSeconds
-) {
-    this.driver = driver;
-    this.wait = new WebDriverWait(
-            driver,
-            Duration.ofSeconds(timeoutSeconds)
-    );
-}
+        public ProfileNavigator(WebDriver driver, int timeoutSeconds) {
+            this.driver = driver;
+            this.wait = new WebDriverWait(
+                driver,
+                Duration.ofSeconds(timeoutSeconds)
+          );
+        }
 
-    public boolean openProfile(String username) {
+        @Override
+        public boolean openProfile(String username) {
 
         if (username == null || username.isBlank()) {
             System.out.println("Invalid username.");

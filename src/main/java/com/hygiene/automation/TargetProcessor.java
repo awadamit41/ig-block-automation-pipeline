@@ -2,13 +2,13 @@ package com.hygiene.automation;
 
 public class TargetProcessor {
 
-    private final ProfileNavigator navigator;
+    private final Navigator navigator;
     private final ProfileVerifier verifier;
     private final ActionManager actionManager;
     private final ResultLogger logger;
 
     public TargetProcessor(
-            ProfileNavigator navigator,
+            Navigator navigator,
             ProfileVerifier verifier,
             ActionManager actionManager,
             ResultLogger logger

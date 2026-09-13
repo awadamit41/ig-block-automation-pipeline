@@ -2,14 +2,15 @@ package com.hygiene.automation;
 
 import org.openqa.selenium.WebDriver;
 
-public class ProfileVerifier {
+public class ProfileVerifier implements Verifier {
 
     private final WebDriver driver;
 
     public ProfileVerifier(WebDriver driver) {
         this.driver = driver;
     }
-
+    
+    @Override
     public boolean verifyProfile(String username) {
 
         if (username == null || username.isBlank()) {

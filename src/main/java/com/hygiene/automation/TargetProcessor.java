@@ -3,13 +3,13 @@ package com.hygiene.automation;
 public class TargetProcessor {
 
     private final Navigator navigator;
-    private final ProfileVerifier verifier;
+    private final Verifier verifier;
     private final ActionManager actionManager;
     private final ResultLogger logger;
 
     public TargetProcessor(
             Navigator navigator,
-            ProfileVerifier verifier,
+            Verifier verifier,
             ActionManager actionManager,
             ResultLogger logger
     ) {

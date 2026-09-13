@@ -88,14 +88,15 @@ public class Main {
                     + config.isDryRun()
             );
 
-            // -----------------------------------------
-            // Process all targets
-            // -----------------------------------------
+            ProcessingSummary summary =
+                new ProcessingSummary();
 
             for (String username : targets) {
 
                 ProcessingResult result =
                         processor.process(username);
+                        
+                summary.record(result);
 
                 System.out.println(
                         "STATUS: "
@@ -112,6 +113,9 @@ public class Main {
                         + result.getMessage()
                 );
             }
+            summary.printSummary(
+                config.isDryRun()
+            );
 
             System.out.println();
             System.out.println("==============================================");

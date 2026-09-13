@@ -5,18 +5,18 @@ public class TargetProcessor {
     private final Navigator navigator;
     private final Verifier verifier;
     private final ActionExecutor actionExecutor;
-    private final ResultLogger logger;
+    private final ResultRecorder recorder;
 
     public TargetProcessor(
-            Navigator navigator,
-            Verifier verifier,
-            ActionExecutor actionExecutor,
-            ResultLogger logger
+        Navigator navigator,
+        Verifier verifier,
+        ActionExecutor actionExecutor,
+        ResultRecorder recorder
     ) {
         this.navigator = navigator;
         this.verifier = verifier;
         this.actionExecutor = actionExecutor;
-        this.logger = logger;
+        this.recorder = recorder;
     }
 
     public ProcessingResult process(String username) {
@@ -28,101 +28,89 @@ public class TargetProcessor {
             System.out.println("Processing @" + username);
             System.out.println("----------------------------------------------");
 
-            // -----------------------------------------
-            // Navigation
-            // -----------------------------------------
-
             boolean opened =
-                    navigator.openProfile(username);
+                navigator.openProfile(username);
 
             if (!opened) {
 
                 ProcessingResult result =
-                        new ProcessingResult(
-                                username,
-                                ProcessingStatus.NAVIGATION_FAILED,
-                                ActionResult.FAILED,
-                                "Profile navigation failed."
-                        );
-
-                logger.log(
+                    new ProcessingResult(
                         username,
-                        "FAILED",
-                        "NOT_CHECKED",
-                        ActionResult.FAILED
+                        ProcessingStatus.NAVIGATION_FAILED,
+                        ActionResult.FAILED,
+                        "Profile navigation failed."
+                    );
+
+                recorder.log(
+                    username,
+                    "FAILED",
+                    "NOT_CHECKED",
+                    ActionResult.FAILED
                 );
 
                 return result;
             }
 
-            // -----------------------------------------
-            // Verification
-            // -----------------------------------------
-
             boolean verified =
-                    verifier.verifyProfile(username);
+                verifier.verifyProfile(username);
 
             if (!verified) {
 
                 ProcessingResult result =
-                        new ProcessingResult(
-                                username,
-                                ProcessingStatus.VERIFICATION_FAILED,
-                                ActionResult.SKIPPED,
-                                "Profile verification failed."
-                        );
-
-                logger.log(
+                    new ProcessingResult(
                         username,
-                        "SUCCESS",
-                        "NOT_VERIFIED",
-                        ActionResult.SKIPPED
+                        ProcessingStatus.VERIFICATION_FAILED,
+                        ActionResult.SKIPPED,
+                        "Profile verification failed."
+                    );
+
+                recorder.log(
+                    username,
+                    "SUCCESS",
+                    "NOT_VERIFIED",
+                    ActionResult.SKIPPED
                 );
 
                 return result;
             }
 
-            // -----------------------------------------
-            // Action decision
-            // -----------------------------------------
-
             ActionResult actionResult =
-                    actionExecutor.process(
-                            username,
-                            true
-                    );
+                actionExecutor.process(
+                    username,
+                    true
+                );
 
             ProcessingResult result =
-                    new ProcessingResult(
-                            username,
-                            ProcessingStatus.SUCCESS,
-                            actionResult,
-                            "Target processed successfully."
-                    );
-
-            logger.log(
+                new ProcessingResult(
                     username,
-                    "SUCCESS",
-                    "VERIFIED",
-                    actionResult
+                    ProcessingStatus.SUCCESS,
+                    actionResult,
+                    "Target processed successfully."
+                );
+
+            recorder.log(
+                username,
+                "SUCCESS",
+                "VERIFIED",
+                actionResult
             );
 
             return result;
 
         } catch (Exception e) {
 
-            logger.log(
-                    username,
-                    "FAILED",
-                    "FAILED",
-                    ActionResult.FAILED
+            recorder.log(
+                username,
+                "FAILED",
+                "FAILED",
+                ActionResult.FAILED
             );
 
             return new ProcessingResult(
-                    username,
-                    ProcessingStatus.FAILED,
-                    ActionResult.FAILED,
-                    e.getMessage()
+                username,
+                ProcessingStatus.FAILED,
+                ActionResult.FAILED,
+                e.getMessage()
             );
         }
     }

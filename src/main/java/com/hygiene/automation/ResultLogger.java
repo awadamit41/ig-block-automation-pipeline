@@ -6,7 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 
-public class ResultLogger {
+public class ResultLogger implements ResultRecorder {
 
     private final Path logFile;
 
@@ -30,6 +30,7 @@ public class ResultLogger {
         }
     }
 
+    @Override
     public void log(
             String username,
             String navigation,

@@ -4,18 +4,18 @@ public class TargetProcessor {
 
     private final Navigator navigator;
     private final Verifier verifier;
-    private final ActionManager actionManager;
+    private final ActionExecutor actionExecutor;
     private final ResultLogger logger;
 
     public TargetProcessor(
             Navigator navigator,
             Verifier verifier,
-            ActionManager actionManager,
+            ActionExecutor actionExecutor,
             ResultLogger logger
     ) {
         this.navigator = navigator;
         this.verifier = verifier;
-        this.actionManager = actionManager;
+        this.actionExecutor = actionExecutor;
         this.logger = logger;
     }
 
@@ -87,7 +87,7 @@ public class TargetProcessor {
             // -----------------------------------------
 
             ActionResult actionResult =
-                    actionManager.process(
+                    actionExecutor.process(
                             username,
                             true
                     );

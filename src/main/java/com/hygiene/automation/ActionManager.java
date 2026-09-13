@@ -1,6 +1,6 @@
 package com.hygiene.automation;
 
-public class ActionManager {
+public class ActionManager implements ActionExecutor{
 
     private final boolean dryRun;
 
@@ -8,6 +8,7 @@ public class ActionManager {
         this.dryRun = dryRun;
     }
 
+    @Override
     public ActionResult process(String username, boolean verified) {
 
         if (username == null || username.isBlank()) {

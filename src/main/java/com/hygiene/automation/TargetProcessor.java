@@ -21,75 +21,87 @@ public class TargetProcessor {
 
     public ProcessingResult process(String username) {
 
+        String normalizedUsername =
+            normalizeUsername(username);
+
+        if (normalizedUsername == null) {
+
+            return createFailureResult(
+                username,
+                ProcessingStatus.SKIPPED,
+                ActionResult.SKIPPED,
+                "Invalid or blank username."
+            );
+        }
+
         try {
 
-            System.out.println();
-            System.out.println("----------------------------------------------");
-            System.out.println("Processing @" + username);
-            System.out.println("----------------------------------------------");
+            printProcessingHeader(normalizedUsername);
+
+            // ----------------------------------------------
+            // Navigation
+            // ----------------------------------------------
 
             boolean opened =
-                navigator.openProfile(username);
+                navigator.openProfile(normalizedUsername);
 
             if (!opened) {
 
-                ProcessingResult result =
-                    new ProcessingResult(
-                        username,
-                        ProcessingStatus.NAVIGATION_FAILED,
-                        ActionResult.FAILED,
-                        "Profile navigation failed."
-                    );
-
-                recorder.log(
-                    username,
-                    "FAILED",
-                    "NOT_CHECKED",
-                    ActionResult.FAILED
+                return createFailureResult(
+                    normalizedUsername,
+                    ProcessingStatus.NAVIGATION_FAILED,
+                    ActionResult.FAILED,
+                    "Profile navigation failed."
                 );
-
-                return result;
             }
 
+            // ----------------------------------------------
+            // Verification
+            // ----------------------------------------------
+
             boolean verified =
-                verifier.verifyProfile(username);
+                verifier.verifyProfile(normalizedUsername);
 
             if (!verified) {
 
-                ProcessingResult result =
-                    new ProcessingResult(
-                        username,
-                        ProcessingStatus.VERIFICATION_FAILED,
-                        ActionResult.SKIPPED,
-                        "Profile verification failed."
-                    );
-
-                recorder.log(
-                    username,
-                    "SUCCESS",
-                    "NOT_VERIFIED",
-                    ActionResult.SKIPPED
+                return createFailureResult(
+                    normalizedUsername,
+                    ProcessingStatus.VERIFICATION_FAILED,
+                    ActionResult.SKIPPED,
+                    "Profile verification failed."
                 );
-
-                return result;
             }
+
+            // ----------------------------------------------
+            // Action
+            // ----------------------------------------------
 
             ActionResult actionResult =
                 actionExecutor.process(
-                    username,
+                    normalizedUsername,
                     true
                 );
 
+            ProcessingStatus status =
+                actionResult == ActionResult.FAILED
+                    ? ProcessingStatus.FAILED
+                    : ProcessingStatus.SUCCESS;
+
+            String message =
+                actionResult == ActionResult.FAILED
+                    ? "Action processing failed."
+                    : "Target processed successfully.";
+
             ProcessingResult result =
                 new ProcessingResult(
-                    username,
-                    ProcessingStatus.SUCCESS,
+                    normalizedUsername,
+                    status,
                     actionResult,
-                    "Target processed successfully."
+                    message
                 );
 
-            recorder.log(
-                username,
+            recordSafely(
+                normalizedUsername,
                 "SUCCESS",
                 "VERIFIED",
                 actionResult
@@ -99,19 +111,141 @@ public class TargetProcessor {
 
         } catch (Exception e) {
 
-            recorder.log(
-                username,
+            String message =
+                buildExceptionMessage(e);
+
+            recordSafely(
+                normalizedUsername,
                 "FAILED",
                 "FAILED",
                 ActionResult.FAILED
             );
 
             return new ProcessingResult(
-                username,
+                normalizedUsername,
                 ProcessingStatus.FAILED,
                 ActionResult.FAILED,
-                e.getMessage()
+                message
             );
         }
+    }
+
+    private String normalizeUsername(String username) {
+
+        if (username == null || username.isBlank()) {
+            return null;
+        }
+
+        String normalized =
+            username.trim();
+
+        if (normalized.startsWith("@")) {
+            normalized =
+                normalized.substring(1);
+        }
+
+        if (normalized.isBlank()) {
+            return null;
+        }
+
+        return normalized;
+    }
+
+    private ProcessingResult createFailureResult(
+        String username,
+        ProcessingStatus status,
+        ActionResult actionResult,
+        String message
+    ) {
+
+        ProcessingResult result =
+            new ProcessingResult(
+                username,
+                status,
+                actionResult,
+                message
+            );
+
+        String navigation =
+            status == ProcessingStatus.NAVIGATION_FAILED
+                ? "FAILED"
+                : "SUCCESS";
+
+        String verification =
+            status == ProcessingStatus.VERIFICATION_FAILED
+                ? "NOT_VERIFIED"
+                : status == ProcessingStatus.NAVIGATION_FAILED
+                    ? "NOT_CHECKED"
+                    : "NOT_CHECKED";
+
+        recordSafely(
+            username,
+            navigation,
+            verification,
+            actionResult
+        );
+
+        return result;
+    }
+
+    private void recordSafely(
+        String username,
+        String navigation,
+        String verification,
+        ActionResult actionResult
+    ) {
+
+        try {
+
+            recorder.log(
+                username,
+                navigation,
+                verification,
+                actionResult
+            );
+
+        } catch (Exception e) {
+
+            System.err.println(
+                "WARNING: Unable to record result for @"
+                + username
+            );
+
+            System.err.println(
+                "Recorder error: "
+                + buildExceptionMessage(e)
+            );
+        }
+    }
+
+    private String buildExceptionMessage(Exception e) {
+
+        String message =
+            e.getMessage();
+
+        if (message == null || message.isBlank()) {
+            return e.getClass().getSimpleName()
+                + " occurred while processing target.";
+        }
+
+        return e.getClass().getSimpleName()
+            + ": "
+            + message;
+    }
+
+    private void printProcessingHeader(String username) {
+
+        System.out.println();
+        System.out.println(
+            "----------------------------------------------"
+        );
+
+        System.out.println(
+            "Processing @" + username
+        );
+
+        System.out.println(
+            "----------------------------------------------"
+        );
     }
 }

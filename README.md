@@ -1,37 +1,58 @@
-# Social Media Hygiene Automation
+# Social Media Account Hygiene Automation
 
-Java + Maven + Selenium project for a controlled social-media account hygiene workflow.
+A Java-based Selenium automation framework for structured social-media account hygiene workflows.
 
-## Current milestone
-This starter project only verifies the Java/Maven project setup. It does not perform blocking actions.
+The project focuses on reliable target ingestion, profile navigation, profile verification, dry-run action handling, structured result logging, configuration validation, CLI controls, and resilient batch processing.
 
-## Requirements
-- Java 17+
-- Maven 3.8+
-- Google Chrome
-- VS Code (recommended)
+> **Important:** Account-changing operations are intentionally disabled in this prototype. `--execute` does not perform real account-changing actions.
 
-## Run
+---
 
-From the project directory:
+## Features
 
-```bash
-mvn clean compile
-mvn exec:java
-```
+- Java 25 application
+- Maven-based project
+- Selenium WebDriver with Microsoft Edge
+- Persistent Edge user profile
+- CSV-based target ingestion
+- Duplicate target removal
+- Username validation
+- Profile navigation
+- Profile URL verification
+- Dry-run action layer
+- Structured CSV result logging
+- Processing status and summary reporting
+- Command-line overrides
+- Configuration validation
+- Per-target failure isolation
+- Dependency-injected processing components
+- JUnit 5 unit tests
 
-Expected output includes:
+---
 
-`Project initialized successfully.`
+## Architecture
 
-## Planned modules
-- Browser/session manager
-- Profile navigator
-- Target CSV loader
-- Profile verification
-- Controlled action manager
-- Result logger
-- Screenshot-on-error
-- Dry-run/manual-confirmation mode
+The application follows a layered processing pipeline:
 
-The automation should not attempt to bypass CAPTCHAs, rate limits, fingerprinting, or other anti-abuse controls.
+```text
+CLI / Configuration
+        │
+        ▼
+   Target Loader
+        │
+        ▼
+ Target Processor
+        │
+        ├── Navigator
+        │
+        ├── Verifier
+        │
+        ├── Action Executor
+        │
+        └── Result Recorder
+        │
+        ▼
+ Processing Result
+        │
+        ▼
+ Processing Summary

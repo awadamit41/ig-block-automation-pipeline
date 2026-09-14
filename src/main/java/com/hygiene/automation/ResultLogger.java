@@ -1,5 +1,6 @@
 package com.hygiene.automation;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,75 +9,114 @@ import java.time.LocalDateTime;
 
 public class ResultLogger implements ResultRecorder {
 
-    private final Path logFile;
+    private final Path logPath;
 
     public ResultLogger(String filePath) throws IOException {
 
-        this.logFile = Path.of(filePath);
+        if (filePath == null || filePath.isBlank()) {
+            throw new IllegalArgumentException(
+                "Log file path cannot be blank."
+            );
+        }
 
-        Path parent = logFile.getParent();
+        logPath = Path.of(filePath);
+
+        Path parent =
+            logPath.toAbsolutePath().getParent();
 
         if (parent != null) {
             Files.createDirectories(parent);
         }
 
-        if (!Files.exists(logFile)) {
+        if (!Files.exists(logPath)) {
 
-            Files.writeString(
-                    logFile,
-                    "timestamp,username,navigation,verification,action\n",
-                    StandardOpenOption.CREATE
-            );
+            try (BufferedWriter writer =
+                Files.newBufferedWriter(
+                    logPath,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.WRITE
+                )) {
+
+                writer.write(
+                    "timestamp,username,navigation,"
+                    + "verification,action"
+                );
+
+                writer.newLine();
+            }
         }
     }
 
     @Override
     public void log(
-            String username,
-            String navigation,
-            String verification,
-            ActionResult action
+        String username,
+        String navigation,
+        String verification,
+        ActionResult action
     ) {
 
-        String timestamp =
-                LocalDateTime.now().toString();
+        try (BufferedWriter writer =
+            Files.newBufferedWriter(
+                logPath,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.APPEND
+            )) {
 
-        String row =
-                timestamp + ","
-                + escape(username) + ","
-                + escape(navigation) + ","
-                + escape(verification) + ","
-                + action + System.lineSeparator();
-
-        try {
-
-            Files.writeString(
-                    logFile,
-                    row,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND
+            writer.write(
+                csv(LocalDateTime.now().toString())
             );
+
+            writer.write(",");
+
+            writer.write(
+                csv(username)
+            );
+
+            writer.write(",");
+
+            writer.write(
+                csv(navigation)
+            );
+
+            writer.write(",");
+
+            writer.write(
+                csv(verification)
+            );
+
+            writer.write(",");
+
+            writer.write(
+                csv(
+                    action == null
+                        ? null
+                        : action.name()
+                )
+            );
+
+            writer.newLine();
 
         } catch (IOException e) {
 
-            System.err.println(
-                    "Unable to write result log."
-            );
-
-            System.err.println(
-                    "Log file: "
-                    + logFile.toAbsolutePath()
+            throw new IllegalStateException(
+                "Unable to write result log: "
+                + logPath.toAbsolutePath(),
+                e
             );
         }
     }
 
-    private String escape(String value) {
+    private String csv(String value) {
 
         if (value == null) {
             return "";
         }
 
-        return value
-                .replace("\"", "\"\"");
+        String escaped =
+            value.replace("\"", "\"\"");
+
+        return "\""
+            + escaped
+            + "\"";
     }
 }

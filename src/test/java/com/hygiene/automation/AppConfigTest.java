@@ -15,24 +15,22 @@ import org.junit.jupiter.api.io.TempDir;
 class AppConfigTest {
 
     @TempDir
-    Path tempDirectory;
+    Path tempDir;
 
     @Test
     void shouldLoadConfiguration() throws IOException {
-        Path configFile =
-            tempDirectory.resolve("config.properties");
 
-        Files.writeString(
-            configFile,
-            """
-            browser=edge
-            target.file=targets.csv
-            log.file=logs/results.csv
-            profile.directory=social-media-hygiene-edge-profile
-            wait.timeout.seconds=15
-            dry.run=true
-            """
-        );
+        Path configFile =
+            createConfig(
+                """
+                browser=edge
+                target.file=targets.csv
+                log.file=logs/results.csv
+                profile.directory=test-profile
+                wait.timeout.seconds=10
+                dry.run=true
+                """
+            );
 
         AppConfig config =
             new AppConfig(configFile.toString());
@@ -48,48 +46,60 @@ class AppConfigTest {
         );
 
         assertEquals(
-            "social-media-hygiene-edge-profile",
+            "test-profile",
             config.getProfileDirectory()
         );
 
         assertEquals(
-            15,
+            "edge",
+            config.getBrowser()
+        );
+
+        assertEquals(
+            10,
             config.getWaitTimeoutSeconds()
         );
 
-        assertTrue(config.isDryRun());
+        assertTrue(
+            config.isDryRun()
+        );
     }
 
     @Test
-    void shouldReadDryRunAsFalse() throws IOException {
-        Path configFile =
-            tempDirectory.resolve("config.properties");
+    void shouldReturnFalseWhenDryRunIsDisabled()
+        throws IOException {
 
-        Files.writeString(
-            configFile,
-            """
-            target.file=targets.csv
-            log.file=logs/results.csv
-            profile.directory=edge-profile
-            wait.timeout.seconds=10
-            dry.run=false
-            """
-        );
+        Path configFile =
+            createConfig(
+                """
+                browser=edge
+                target.file=targets.csv
+                log.file=logs/results.csv
+                profile.directory=test-profile
+                wait.timeout.seconds=10
+                dry.run=false
+                """
+            );
 
         AppConfig config =
             new AppConfig(configFile.toString());
 
-        assertFalse(config.isDryRun());
+        assertFalse(
+            config.isDryRun()
+        );
     }
 
     @Test
     void shouldRejectMissingConfigurationFile() {
+
         Path missingFile =
-            tempDirectory.resolve("missing.properties");
+            tempDir.resolve("missing.properties");
 
         assertThrows(
             IOException.class,
-            () -> new AppConfig(missingFile.toString())
+            () -> new AppConfig(
+                missingFile.toString()
+            )
         );
     }
 
@@ -98,22 +108,28 @@ class AppConfigTest {
         throws IOException {
 
         Path configFile =
-            tempDirectory.resolve("config.properties");
-
-        Files.writeString(
-            configFile,
-            """
-            target.file=targets.csv
-            log.file=logs/results.csv
-            """
-        );
+            createConfig(
+                """
+                browser=edge
+                target.file=targets.csv
+                log.file=logs/results.csv
+                profile.directory=test-profile
+                wait.timeout.seconds=10
+                """
+            );
 
         AppConfig config =
             new AppConfig(configFile.toString());
 
-        assertThrows(
-            IllegalArgumentException.class,
-            config::getProfileDirectory
+        IllegalArgumentException exception =
+            assertThrows(
+                IllegalArgumentException.class,
+                config::isDryRun
+            );
+
+        assertEquals(
+            "Missing configuration: dry.run",
+            exception.getMessage()
         );
     }
 
@@ -122,25 +138,153 @@ class AppConfigTest {
         throws IOException {
 
         Path configFile =
-            tempDirectory.resolve("config.properties");
-
-        Files.writeString(
-            configFile,
-            """
-            target.file=targets.csv
-            log.file=logs/results.csv
-            profile.directory=edge-profile
-            wait.timeout.seconds=invalid
-            dry.run=true
-            """
-        );
+            createConfig(
+                """
+                browser=edge
+                target.file=targets.csv
+                log.file=logs/results.csv
+                profile.directory=test-profile
+                wait.timeout.seconds=invalid
+                dry.run=true
+                """
+            );
 
         AppConfig config =
             new AppConfig(configFile.toString());
 
-        assertThrows(
-            NumberFormatException.class,
-            config::getWaitTimeoutSeconds
+        IllegalArgumentException exception =
+            assertThrows(
+                IllegalArgumentException.class,
+                config::getWaitTimeoutSeconds
+            );
+
+        assertEquals(
+            "wait.timeout.seconds must be a valid integer.",
+            exception.getMessage()
         );
+    }
+
+    @Test
+    void shouldRejectNonPositiveTimeout()
+        throws IOException {
+
+        Path configFile =
+            createConfig(
+                """
+                browser=edge
+                target.file=targets.csv
+                log.file=logs/results.csv
+                profile.directory=test-profile
+                wait.timeout.seconds=0
+                dry.run=true
+                """
+            );
+
+        AppConfig config =
+            new AppConfig(configFile.toString());
+
+        IllegalArgumentException exception =
+            assertThrows(
+                IllegalArgumentException.class,
+                config::getWaitTimeoutSeconds
+            );
+
+        assertEquals(
+            "wait.timeout.seconds must be greater than 0.",
+            exception.getMessage()
+        );
+    }
+
+    @Test
+    void shouldRejectUnsupportedBrowser()
+        throws IOException {
+
+        Path configFile =
+            createConfig(
+                """
+                browser=chrome
+                target.file=targets.csv
+                log.file=logs/results.csv
+                profile.directory=test-profile
+                wait.timeout.seconds=10
+                dry.run=true
+                """
+            );
+
+        AppConfig config =
+            new AppConfig(configFile.toString());
+
+        IllegalArgumentException exception =
+            assertThrows(
+                IllegalArgumentException.class,
+                config::getBrowser
+            );
+
+        assertEquals(
+            "Unsupported browser: chrome. Supported browser: edge.",
+            exception.getMessage()
+        );
+    }
+
+    @Test
+    void shouldRejectInvalidDryRunValue()
+        throws IOException {
+
+        Path configFile =
+            createConfig(
+                """
+                browser=edge
+                target.file=targets.csv
+                log.file=logs/results.csv
+                profile.directory=test-profile
+                wait.timeout.seconds=10
+                dry.run=yes
+                """
+            );
+
+        AppConfig config =
+            new AppConfig(configFile.toString());
+
+        IllegalArgumentException exception =
+            assertThrows(
+                IllegalArgumentException.class,
+                config::isDryRun
+            );
+
+        assertEquals(
+            "dry.run must be either true or false.",
+            exception.getMessage()
+        );
+    }
+
+    @Test
+    void shouldRejectBlankConfigurationPath() {
+
+        IllegalArgumentException exception =
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> new AppConfig(" ")
+            );
+
+        assertEquals(
+            "Configuration file path cannot be blank.",
+            exception.getMessage()
+        );
+    }
+
+    private Path createConfig(String content)
+        throws IOException {
+
+        Path configFile =
+            tempDir.resolve(
+                "test-" + System.nanoTime() + ".properties"
+            );
+
+        Files.writeString(
+            configFile,
+            content
+        );
+
+        return configFile;
     }
 }

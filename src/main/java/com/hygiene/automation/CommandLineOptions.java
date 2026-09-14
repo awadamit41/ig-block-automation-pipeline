@@ -18,6 +18,12 @@ public class CommandLineOptions {
 
             String argument = args[i];
 
+            if (argument == null || argument.isBlank()) {
+                throw new IllegalArgumentException(
+                    "Command-line argument cannot be blank."
+                );
+            }
+
             switch (argument) {
 
                 case "--targets":
@@ -28,7 +34,15 @@ public class CommandLineOptions {
                         );
                     }
 
-                    targetFile = args[++i];
+                    String value = args[++i];
+
+                    if (value == null || value.isBlank()) {
+                        throw new IllegalArgumentException(
+                            "Target file path cannot be blank."
+                        );
+                    }
+
+                    targetFile = value.trim();
                     break;
 
                 case "--dry-run":
@@ -82,21 +96,29 @@ public class CommandLineOptions {
     private void printHelp() {
 
         System.out.println();
-        System.out.println("Social Media Hygiene Automation");
+        System.out.println(
+            "Social Media Hygiene Automation"
+        );
+
         System.out.println();
         System.out.println("Options:");
+
         System.out.println(
             "  --targets <file>  Use a different target CSV file."
         );
+
         System.out.println(
             "  --dry-run         Run without account-changing actions."
         );
+
         System.out.println(
             "  --execute         Enable configured execution mode."
         );
+
         System.out.println(
             "  --help            Show this help message."
         );
+
         System.out.println();
     }
 }

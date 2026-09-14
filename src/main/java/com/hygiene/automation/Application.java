@@ -13,13 +13,25 @@ public class Application {
         WebDriver driver = null;
 
         try {
+            // ----------------------------------------------
+            // Command-line options
+            // ----------------------------------------------
+
             CommandLineOptions commandLineOptions =
                 new CommandLineOptions();
 
             commandLineOptions.parse(args);
 
+            // ----------------------------------------------
+            // Configuration
+            // ----------------------------------------------
+
             AppConfig config =
                 new AppConfig("config.properties");
+
+            // Validate configured browser before starting Edge.
+            String browser =
+                config.getBrowser();
 
             String targetFile =
                 config.getTargetFile();
@@ -37,6 +49,10 @@ public class Application {
                     commandLineOptions.getDryRun();
             }
 
+            // ----------------------------------------------
+            // Browser startup
+            // ----------------------------------------------
+
             EdgeOptions options =
                 new EdgeOptions();
 
@@ -49,7 +65,14 @@ public class Application {
                 "--user-data-dir=" + userProfile
             );
 
-            System.out.println("Starting Edge...");
+            System.out.println();
+            System.out.println(
+                "Browser: " + browser
+            );
+
+            System.out.println(
+                "Starting Edge..."
+            );
 
             driver =
                 new EdgeDriver(options);
@@ -57,6 +80,10 @@ public class Application {
             System.out.println(
                 "Edge started successfully."
             );
+
+            // ----------------------------------------------
+            // Application components
+            // ----------------------------------------------
 
             TargetLoader loader =
                 new TargetLoader(targetFile);
@@ -84,6 +111,10 @@ public class Application {
                     logger
                 );
 
+            // ----------------------------------------------
+            // Load targets
+            // ----------------------------------------------
+
             List<String> targets =
                 loader.loadTargets();
 
@@ -97,6 +128,10 @@ public class Application {
                 "Dry-run mode: "
                 + dryRun
             );
+
+            // ----------------------------------------------
+            // Process targets
+            // ----------------------------------------------
 
             ProcessingSummary summary =
                 new ProcessingSummary();
@@ -124,15 +159,21 @@ public class Application {
                 );
             }
 
+            // ----------------------------------------------
+            // Summary
+            // ----------------------------------------------
+
             summary.printSummary(dryRun);
 
             System.out.println();
             System.out.println(
                 "=============================================="
             );
+
             System.out.println(
                 " Processing completed."
             );
+
             System.out.println(
                 "=============================================="
             );
@@ -145,6 +186,7 @@ public class Application {
             System.err.println(
                 "Configuration or command-line error:"
             );
+
             System.err.println(
                 e.getMessage()
             );
@@ -157,6 +199,7 @@ public class Application {
             System.err.println(
                 "Application failed:"
             );
+
             System.err.println(
                 e.getMessage()
             );
@@ -165,14 +208,21 @@ public class Application {
 
         } finally {
 
+            // ----------------------------------------------
+            // Browser shutdown
+            // ----------------------------------------------
+
             if (driver != null) {
 
                 try {
                     driver.quit();
+
                     System.out.println(
                         "Edge closed."
                     );
+
                 } catch (Exception e) {
+
                     System.err.println(
                         "Unable to close Edge cleanly."
                     );

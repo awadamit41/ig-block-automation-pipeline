@@ -3,31 +3,64 @@ package com.hygiene.automation;
 import java.util.List;
 
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.edge.EdgeDriver;
-import org.openqa.selenium.edge.EdgeOptions;
 
 public class Application {
+
+    private final BrowserDriverFactory browserDriverFactory;
+    private final String configFilePath;
+
+    public Application() {
+        this(
+            new EdgeBrowserDriverFactory(),
+            "config.properties"
+        );
+    }
+
+    public Application(
+        BrowserDriverFactory browserDriverFactory
+    ) {
+        this(
+            browserDriverFactory,
+            "config.properties"
+        );
+    }
+
+    public Application(
+        BrowserDriverFactory browserDriverFactory,
+        String configFilePath
+    ) {
+        if (browserDriverFactory == null) {
+            throw new IllegalArgumentException(
+                "Browser driver factory cannot be null."
+            );
+        }
+
+        if (configFilePath == null
+            || configFilePath.isBlank()) {
+            throw new IllegalArgumentException(
+                "Configuration file path cannot be blank."
+            );
+        }
+
+        this.browserDriverFactory =
+            browserDriverFactory;
+
+        this.configFilePath =
+            configFilePath.trim();
+    }
 
     public int run(String[] args) {
 
         WebDriver driver = null;
 
         try {
-            // ----------------------------------------------
-            // Command-line options
-            // ----------------------------------------------
-
             CommandLineOptions commandLineOptions =
                 new CommandLineOptions();
 
             commandLineOptions.parse(args);
 
-            // ----------------------------------------------
-            // Configuration
-            // ----------------------------------------------
-
             AppConfig config =
-                new AppConfig("config.properties");
+                new AppConfig(configFilePath);
 
             String browser =
                 config.getBrowser();
@@ -48,41 +81,21 @@ public class Application {
                     commandLineOptions.getDryRun();
             }
 
-            // ----------------------------------------------
-            // Browser startup
-            // ----------------------------------------------
-
-            EdgeOptions options =
-                new EdgeOptions();
-
-            String userProfile =
-                System.getProperty("user.home")
-                + "\\"
-                + config.getProfileDirectory();
-
-            options.addArguments(
-                "--user-data-dir=" + userProfile
-            );
-
             System.out.println();
             System.out.println(
                 "Browser: " + browser
             );
 
             System.out.println(
-                "Starting Edge..."
+                "Starting browser..."
             );
 
             driver =
-                new EdgeDriver(options);
+                browserDriverFactory.create(config);
 
             System.out.println(
-                "Edge started successfully."
+                "Browser started successfully."
             );
-
-            // ----------------------------------------------
-            // Application components
-            // ----------------------------------------------
 
             TargetLoader loader =
                 new TargetLoader(targetFile);
@@ -110,10 +123,6 @@ public class Application {
                     logger
                 );
 
-            // ----------------------------------------------
-            // Load targets
-            // ----------------------------------------------
-
             List<String> targets =
                 loader.loadTargets();
 
@@ -125,10 +134,6 @@ public class Application {
             System.out.println(
                 "Dry-run mode: " + dryRun
             );
-
-            // ----------------------------------------------
-            // Process targets
-            // ----------------------------------------------
 
             ProcessingSummary summary =
                 new ProcessingSummary();
@@ -143,16 +148,6 @@ public class Application {
                         processor.process(username);
 
                 } catch (Exception e) {
-
-                    /*
-                     * TargetProcessor is already responsible for
-                     * converting expected processing failures into
-                     * ProcessingResult objects.
-                     *
-                     * This outer guard protects the application
-                     * from an unexpected processor-level failure
-                     * and allows the next target to continue.
-                     */
 
                     System.err.println();
                     System.err.println(
@@ -179,10 +174,6 @@ public class Application {
 
                 printResult(result);
             }
-
-            // ----------------------------------------------
-            // Summary
-            // ----------------------------------------------
 
             summary.printSummary(dryRun);
 
@@ -229,10 +220,6 @@ public class Application {
 
         } finally {
 
-            // ----------------------------------------------
-            // Browser shutdown
-            // ----------------------------------------------
-
             if (driver != null) {
 
                 try {
@@ -240,13 +227,13 @@ public class Application {
                     driver.quit();
 
                     System.out.println(
-                        "Edge closed."
+                        "Browser closed."
                     );
 
                 } catch (Exception e) {
 
                     System.err.println(
-                        "Unable to close Edge cleanly."
+                        "Unable to close browser cleanly."
                     );
                 }
             }
@@ -289,4 +276,4 @@ public class Application {
             + ": "
             + message;
     }
-} 
+}

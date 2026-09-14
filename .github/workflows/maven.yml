@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -24,5 +25,5 @@ jobs:
           java-version: '25'
           cache: maven
 
-      - name: Run tests
-        run: mvn --batch-mode clean test
+      - name: Run tests and coverage verification
+        run: mvn --batch-mode clean verify

@@ -29,7 +29,6 @@ public class Application {
             AppConfig config =
                 new AppConfig("config.properties");
 
-            // Validate configured browser before starting Edge.
             String browser =
                 config.getBrowser();
 
@@ -120,13 +119,11 @@ public class Application {
 
             System.out.println();
             System.out.println(
-                "Targets loaded: "
-                + targets.size()
+                "Targets loaded: " + targets.size()
             );
 
             System.out.println(
-                "Dry-run mode: "
-                + dryRun
+                "Dry-run mode: " + dryRun
             );
 
             // ----------------------------------------------
@@ -138,25 +135,49 @@ public class Application {
 
             for (String username : targets) {
 
-                ProcessingResult result =
-                    processor.process(username);
+                ProcessingResult result;
+
+                try {
+
+                    result =
+                        processor.process(username);
+
+                } catch (Exception e) {
+
+                    /*
+                     * TargetProcessor is already responsible for
+                     * converting expected processing failures into
+                     * ProcessingResult objects.
+                     *
+                     * This outer guard protects the application
+                     * from an unexpected processor-level failure
+                     * and allows the next target to continue.
+                     */
+
+                    System.err.println();
+                    System.err.println(
+                        "Unexpected error while processing @"
+                        + username
+                    );
+
+                    System.err.println(
+                        e.getClass().getSimpleName()
+                        + ": "
+                        + e.getMessage()
+                    );
+
+                    result =
+                        new ProcessingResult(
+                            username,
+                            ProcessingStatus.FAILED,
+                            ActionResult.FAILED,
+                            buildExceptionMessage(e)
+                        );
+                }
 
                 summary.record(result);
 
-                System.out.println(
-                    "STATUS: "
-                    + result.getStatus()
-                );
-
-                System.out.println(
-                    "ACTION: "
-                    + result.getActionResult()
-                );
-
-                System.out.println(
-                    "MESSAGE: "
-                    + result.getMessage()
-                );
+                printResult(result);
             }
 
             // ----------------------------------------------
@@ -215,6 +236,7 @@ public class Application {
             if (driver != null) {
 
                 try {
+
                     driver.quit();
 
                     System.out.println(
@@ -229,5 +251,42 @@ public class Application {
                 }
             }
         }
+    }
+
+    private void printResult(
+        ProcessingResult result
+    ) {
+
+        System.out.println(
+            "STATUS: "
+            + result.getStatus()
+        );
+
+        System.out.println(
+            "ACTION: "
+            + result.getActionResult()
+        );
+
+        System.out.println(
+            "MESSAGE: "
+            + result.getMessage()
+        );
+    }
+
+    private String buildExceptionMessage(
+        Exception e
+    ) {
+
+        String message =
+            e.getMessage();
+
+        if (message == null || message.isBlank()) {
+            return e.getClass().getSimpleName()
+                + " occurred while processing target.";
+        }
+
+        return e.getClass().getSimpleName()
+            + ": "
+            + message;
     }
 }

@@ -1,5 +1,13 @@
 # Social Media Account Hygiene Automation
 
+[![Java CI](https://github.com/awadamit41/Social-Media-Account-Hygiene-Automation/actions/workflows/maven.yml/badge.svg)](https://github.com/awadamit41/Social-Media-Account-Hygiene-Automation/actions/workflows/maven.yml)
+
+![Java](https://img.shields.io/badge/Java-25-orange)
+![Maven](https://img.shields.io/badge/Maven-3.9+-C71A36)
+![Selenium](https://img.shields.io/badge/Selenium-4.35.0-43B02A)
+![Tests](https://img.shields.io/badge/tests-79%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/JaCoCo-74%25%20instructions-brightgreen)
+
 A Java-based Selenium automation framework for structured social-media account hygiene workflows.
 
 The project focuses on reliable target ingestion, profile navigation, profile verification, dry-run action handling, structured result logging, configuration validation, CLI controls, and resilient batch processing.

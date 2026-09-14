@@ -1,14 +1,13 @@
 package com.hygiene.automation;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -18,7 +17,8 @@ class AppConfigTest {
     Path tempDir;
 
     @Test
-    void shouldLoadConfiguration() throws IOException {
+    void shouldLoadConfiguration()
+        throws IOException {
 
         Path configFile =
             createConfig(
@@ -29,6 +29,55 @@ class AppConfigTest {
                 profile.directory=test-profile
                 wait.timeout.seconds=10
                 dry.run=true
+                """
+            );
+
+        AppConfig config =
+            new AppConfig(configFile.toString());
+
+        assertEquals(
+            "targets.csv",
+            config.getTargetFile()
+        );
+
+        assertEquals(
+            "logs/results.csv",
+            config.getLogFile()
+        );
+
+        assertEquals(
+            "test-profile",
+            config.getProfileDirectory()
+        );
+
+        assertEquals(
+            "edge",
+            config.getBrowser()
+        );
+
+        assertEquals(
+            10,
+            config.getWaitTimeoutSeconds()
+        );
+
+        assertTrue(
+            config.isDryRun()
+        );
+    }
+
+    @Test
+    void shouldTrimConfigurationValues()
+        throws IOException {
+
+        Path configFile =
+            createConfig(
+                """
+                  browser = edge
+                  target.file = targets.csv
+                  log.file = logs/results.csv
+                  profile.directory = test-profile
+                  wait.timeout.seconds = 10
+                  dry.run = true
                 """
             );
 
@@ -90,16 +139,93 @@ class AppConfigTest {
     }
 
     @Test
+    void shouldAcceptUppercaseBrowser()
+        throws IOException {
+
+        Path configFile =
+            createConfig(
+                """
+                browser=EDGE
+                target.file=targets.csv
+                log.file=logs/results.csv
+                profile.directory=test-profile
+                wait.timeout.seconds=10
+                dry.run=true
+                """
+            );
+
+        AppConfig config =
+            new AppConfig(configFile.toString());
+
+        assertEquals(
+            "edge",
+            config.getBrowser()
+        );
+    }
+
+    @Test
+    void shouldAcceptUppercaseBooleanValues()
+        throws IOException {
+
+        Path configFile =
+            createConfig(
+                """
+                browser=edge
+                target.file=targets.csv
+                log.file=logs/results.csv
+                profile.directory=test-profile
+                wait.timeout.seconds=10
+                dry.run=TRUE
+                """
+            );
+
+        AppConfig config =
+            new AppConfig(configFile.toString());
+
+        assertTrue(
+            config.isDryRun()
+        );
+    }
+
+    @Test
     void shouldRejectMissingConfigurationFile() {
 
         Path missingFile =
-            tempDir.resolve("missing.properties");
+            tempDir.resolve(
+                "missing.properties"
+            );
 
         assertThrows(
             IOException.class,
             () -> new AppConfig(
                 missingFile.toString()
             )
+        );
+    }
+
+    @Test
+    void shouldRejectConfigurationPathThatIsDirectory() {
+
+        assertThrows(
+            IOException.class,
+            () -> new AppConfig(
+                tempDir.toString()
+            )
+        );
+    }
+
+    @Test
+    void shouldRejectBlankConfigurationPath() {
+
+        IllegalArgumentException exception =
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> new AppConfig(" ")
+            );
+
+        assertEquals(
+            "Configuration file path cannot be blank.",
+            exception.getMessage()
         );
     }
 
@@ -119,7 +245,9 @@ class AppConfigTest {
             );
 
         AppConfig config =
-            new AppConfig(configFile.toString());
+            new AppConfig(
+                configFile.toString()
+            );
 
         IllegalArgumentException exception =
             assertThrows(
@@ -129,6 +257,39 @@ class AppConfigTest {
 
         assertEquals(
             "Missing configuration: dry.run",
+            exception.getMessage()
+        );
+    }
+
+    @Test
+    void shouldRejectBlankRequiredProperty()
+        throws IOException {
+
+        Path configFile =
+            createConfig(
+                """
+                browser=edge
+                target.file=
+                log.file=logs/results.csv
+                profile.directory=test-profile
+                wait.timeout.seconds=10
+                dry.run=true
+                """
+            );
+
+        AppConfig config =
+            new AppConfig(
+                configFile.toString()
+            );
+
+        IllegalArgumentException exception =
+            assertThrows(
+                IllegalArgumentException.class,
+                config::getTargetFile
+            );
+
+        assertEquals(
+            "Missing configuration: target.file",
             exception.getMessage()
         );
     }
@@ -150,7 +311,9 @@ class AppConfigTest {
             );
 
         AppConfig config =
-            new AppConfig(configFile.toString());
+            new AppConfig(
+                configFile.toString()
+            );
 
         IllegalArgumentException exception =
             assertThrows(
@@ -165,7 +328,7 @@ class AppConfigTest {
     }
 
     @Test
-    void shouldRejectNonPositiveTimeout()
+    void shouldRejectZeroTimeout()
         throws IOException {
 
         Path configFile =
@@ -181,7 +344,42 @@ class AppConfigTest {
             );
 
         AppConfig config =
-            new AppConfig(configFile.toString());
+            new AppConfig(
+                configFile.toString()
+            );
+
+        IllegalArgumentException exception =
+            assertThrows(
+                IllegalArgumentException.class,
+                config::getWaitTimeoutSeconds
+            );
+
+        assertEquals(
+            "wait.timeout.seconds must be greater than 0.",
+            exception.getMessage()
+        );
+    }
+
+    @Test
+    void shouldRejectNegativeTimeout()
+        throws IOException {
+
+        Path configFile =
+            createConfig(
+                """
+                browser=edge
+                target.file=targets.csv
+                log.file=logs/results.csv
+                profile.directory=test-profile
+                wait.timeout.seconds=-5
+                dry.run=true
+                """
+            );
+
+        AppConfig config =
+            new AppConfig(
+                configFile.toString()
+            );
 
         IllegalArgumentException exception =
             assertThrows(
@@ -212,7 +410,9 @@ class AppConfigTest {
             );
 
         AppConfig config =
-            new AppConfig(configFile.toString());
+            new AppConfig(
+                configFile.toString()
+            );
 
         IllegalArgumentException exception =
             assertThrows(
@@ -243,7 +443,9 @@ class AppConfigTest {
             );
 
         AppConfig config =
-            new AppConfig(configFile.toString());
+            new AppConfig(
+                configFile.toString()
+            );
 
         IllegalArgumentException exception =
             assertThrows(
@@ -257,27 +459,15 @@ class AppConfigTest {
         );
     }
 
-    @Test
-    void shouldRejectBlankConfigurationPath() {
-
-        IllegalArgumentException exception =
-            assertThrows(
-                IllegalArgumentException.class,
-                () -> new AppConfig(" ")
-            );
-
-        assertEquals(
-            "Configuration file path cannot be blank.",
-            exception.getMessage()
-        );
-    }
-
-    private Path createConfig(String content)
-        throws IOException {
+    private Path createConfig(
+        String content
+    ) throws IOException {
 
         Path configFile =
             tempDir.resolve(
-                "test-" + System.nanoTime() + ".properties"
+                "test-"
+                + System.nanoTime()
+                + ".properties"
             );
 
         Files.writeString(

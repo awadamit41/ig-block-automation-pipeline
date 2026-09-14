@@ -1,6 +1,7 @@
 package com.hygiene.automation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -21,6 +23,15 @@ class ApplicationTest {
 
     @TempDir
     Path tempDirectory;
+
+    @Test
+    void shouldCreateDefaultApplication() {
+
+        Application application =
+            new Application();
+
+        assertNotNull(application);
+    }
 
     @Test
     void shouldRejectNullBrowserDriverFactory() {
@@ -294,6 +305,67 @@ class ApplicationTest {
     }
 
     @Test
+    void shouldUseDryRunCommandLineOverride()
+        throws Exception {
+
+        Path targetsPath =
+            tempDirectory.resolve("targets.csv");
+
+        Path logPath =
+            tempDirectory.resolve("results.csv");
+
+        Path configPath =
+            tempDirectory.resolve("config.properties");
+
+        Files.writeString(
+            targetsPath,
+            "username\n"
+            + "testuser\n"
+        );
+
+        writeConfig(
+            configPath,
+            targetsPath,
+            logPath
+        );
+
+        WebDriver driver =
+            mock(WebDriver.class);
+
+        when(driver.getCurrentUrl())
+            .thenReturn(
+                "https://www.instagram.com/testuser/"
+            );
+
+        BrowserDriverFactory factory =
+            mock(BrowserDriverFactory.class);
+
+        when(factory.create(any(AppConfig.class)))
+            .thenReturn(driver);
+
+        Application application =
+            new Application(
+                factory,
+                configPath.toString()
+            );
+
+        int exitCode =
+            application.run(
+                new String[] {
+                    "--dry-run"
+                }
+            );
+
+        assertEquals(
+            0,
+            exitCode
+        );
+
+        verify(driver)
+            .quit();
+    }
+
+    @Test
     void shouldContinueWhenTargetsAreProcessed()
         throws Exception {
 
@@ -471,6 +543,71 @@ class ApplicationTest {
 
         verify(driver)
             .quit();
+    }
+
+    @Test
+    void shouldCoverExceptionMessageWithNormalMessage()
+        throws Exception {
+
+        String result =
+            invokeBuildExceptionMessage(
+                new RuntimeException("Test failure")
+            );
+
+        assertEquals(
+            "RuntimeException: Test failure",
+            result
+        );
+    }
+
+    @Test
+    void shouldCoverExceptionMessageWithBlankMessage()
+        throws Exception {
+
+        String result =
+            invokeBuildExceptionMessage(
+                new RuntimeException("   ")
+            );
+
+        assertEquals(
+            "RuntimeException occurred while processing target.",
+            result
+        );
+    }
+
+    @Test
+    void shouldCoverExceptionMessageWithNullMessage()
+        throws Exception {
+
+        String result =
+            invokeBuildExceptionMessage(
+                new RuntimeException()
+            );
+
+        assertEquals(
+            "RuntimeException occurred while processing target.",
+            result
+        );
+    }
+
+    private String invokeBuildExceptionMessage(
+        Exception exception
+    ) throws Exception {
+
+        Method method =
+            Application.class.getDeclaredMethod(
+                "buildExceptionMessage",
+                Exception.class
+            );
+
+        method.setAccessible(true);
+
+        return (String) method.invoke(
+            new Application(
+                mock(BrowserDriverFactory.class)
+            ),
+            exception
+        );
     }
 
     private void writeConfig(

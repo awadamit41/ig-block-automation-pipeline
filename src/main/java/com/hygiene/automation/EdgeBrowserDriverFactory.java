@@ -7,8 +7,33 @@ import org.openqa.selenium.edge.EdgeOptions;
 public class EdgeBrowserDriverFactory
     implements BrowserDriverFactory {
 
+    private final WebDriverCreator driverCreator;
+
+    public EdgeBrowserDriverFactory() {
+        this(EdgeDriver::new);
+    }
+
+    EdgeBrowserDriverFactory(
+        WebDriverCreator driverCreator
+    ) {
+        if (driverCreator == null) {
+            throw new IllegalArgumentException(
+                "WebDriver creator cannot be null."
+            );
+        }
+
+        this.driverCreator =
+            driverCreator;
+    }
+
     @Override
     public WebDriver create(AppConfig config) {
+
+        if (config == null) {
+            throw new IllegalArgumentException(
+                "Application configuration cannot be null."
+            );
+        }
 
         EdgeOptions options =
             new EdgeOptions();
@@ -22,6 +47,6 @@ public class EdgeBrowserDriverFactory
             "--user-data-dir=" + userProfile
         );
 
-        return new EdgeDriver(options);
+        return driverCreator.create(options);
     }
 }

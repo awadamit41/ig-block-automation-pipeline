@@ -33,11 +33,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-
-        Main main =
-            new Main();
-
-        main.run(args);
+        new Main().run(args);
     }
 
     int run(String[] args) {

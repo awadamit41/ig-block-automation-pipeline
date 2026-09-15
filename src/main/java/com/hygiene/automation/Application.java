@@ -81,6 +81,9 @@ public class Application {
                     commandLineOptions.getDryRun();
             }
 
+            int actionDelaySeconds =
+                config.getActionDelaySeconds();
+
             System.out.println();
             System.out.println(
                 "Browser: " + browser
@@ -109,8 +112,19 @@ public class Application {
             ProfileVerifier verifier =
                 new ProfileVerifier(driver);
 
+            BlockActionPerformer blockActionPerformer =
+                new BlockActionPerformer(driver);
+
+            ActionDelay actionDelay =
+                new ThreadActionDelay();
+
             ActionManager actionManager =
-                new ActionManager(dryRun);
+                new ActionManager(
+                    dryRun,
+                    blockActionPerformer,
+                    actionDelay,
+                    actionDelaySeconds
+                );
 
             ResultLogger logger =
                 new ResultLogger(config.getLogFile());
@@ -133,6 +147,12 @@ public class Application {
 
             System.out.println(
                 "Dry-run mode: " + dryRun
+            );
+
+            System.out.println(
+                "Action delay: "
+                + actionDelaySeconds
+                + " seconds"
             );
 
             ProcessingSummary summary =

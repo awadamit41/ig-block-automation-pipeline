@@ -1,38 +1,75 @@
 package com.hygiene.automation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 
 class ActionManagerTest {
 
     @Test
-    void dryRunShouldReturnWouldExecuteForVerifiedProfile() {
+    void shouldReturnSkippedForBlankUsername() {
 
-        ActionManager actionManager =
-            new ActionManager(true);
+        BlockActionPerformer performer =
+            mock(BlockActionPerformer.class);
+
+        ActionDelay delay =
+            mock(ActionDelay.class);
+
+        ActionManager manager =
+            new ActionManager(
+                true,
+                performer,
+                delay,
+                5
+            );
 
         ActionResult result =
-            actionManager.process(
-                "test.account",
+            manager.process(
+                " ",
                 true
             );
 
         assertEquals(
-            ActionResult.WOULD_EXECUTE,
+            ActionResult.SKIPPED,
             result
         );
+
+        verify(
+            performer,
+            never()
+        ).block(" ");
+
+        verify(
+            delay,
+            never()
+        ).waitBeforeAction(5);
     }
 
     @Test
-    void unverifiedProfileShouldBeSkipped() {
+    void shouldReturnSkippedWhenProfileIsNotVerified() {
 
-        ActionManager actionManager =
-            new ActionManager(true);
+        BlockActionPerformer performer =
+            mock(BlockActionPerformer.class);
+
+        ActionDelay delay =
+            mock(ActionDelay.class);
+
+        ActionManager manager =
+            new ActionManager(
+                true,
+                performer,
+                delay,
+                5
+            );
 
         ActionResult result =
-            actionManager.process(
-                "test.account",
+            manager.process(
+                "user2",
                 false
             );
 
@@ -40,17 +77,83 @@ class ActionManagerTest {
             ActionResult.SKIPPED,
             result
         );
+
+        verify(
+            performer,
+            never()
+        ).block("user2");
+
+        verify(
+            delay,
+            never()
+        ).waitBeforeAction(5);
     }
 
     @Test
-    void blankUsernameShouldBeSkipped() {
+    void shouldReturnWouldExecuteInDryRunMode() {
 
-        ActionManager actionManager =
-            new ActionManager(true);
+        BlockActionPerformer performer =
+            mock(BlockActionPerformer.class);
+
+        ActionDelay delay =
+            mock(ActionDelay.class);
+
+        ActionManager manager =
+            new ActionManager(
+                true,
+                performer,
+                delay,
+                5
+            );
 
         ActionResult result =
-            actionManager.process(
-                "",
+            manager.process(
+                "user2",
+                true
+            );
+
+        assertEquals(
+            ActionResult.WOULD_EXECUTE,
+            result
+        );
+
+        verify(
+            performer,
+            never()
+        ).block("user2");
+
+        verify(
+            delay,
+            never()
+        ).waitBeforeAction(5);
+    }
+
+    @Test
+    void shouldWaitAndDelegateWhenNotDryRun() {
+
+        BlockActionPerformer performer =
+            mock(BlockActionPerformer.class);
+
+        ActionDelay delay =
+            mock(ActionDelay.class);
+
+        when(
+            performer.block("user2")
+        ).thenReturn(
+            ActionResult.SKIPPED
+        );
+
+        ActionManager manager =
+            new ActionManager(
+                false,
+                performer,
+                delay,
+                5
+            );
+
+        ActionResult result =
+            manager.process(
+                "user2",
                 true
             );
 
@@ -58,41 +161,153 @@ class ActionManagerTest {
             ActionResult.SKIPPED,
             result
         );
+
+        verify(
+            delay
+        ).waitBeforeAction(5);
+
+        verify(
+            performer
+        ).block("user2");
     }
 
     @Test
-    void nullUsernameShouldBeSkipped() {
+    void shouldPropagateExecutedResultFromPerformer() {
 
-        ActionManager actionManager =
-            new ActionManager(true);
+        BlockActionPerformer performer =
+            mock(BlockActionPerformer.class);
+
+        ActionDelay delay =
+            mock(ActionDelay.class);
+
+        when(
+            performer.block("user2")
+        ).thenReturn(
+            ActionResult.EXECUTED
+        );
+
+        ActionManager manager =
+            new ActionManager(
+                false,
+                performer,
+                delay,
+                5
+            );
 
         ActionResult result =
-            actionManager.process(
+            manager.process(
+                "user2",
+                true
+            );
+
+        assertEquals(
+            ActionResult.EXECUTED,
+            result
+        );
+
+        verify(
+            delay
+        ).waitBeforeAction(5);
+
+        verify(
+            performer
+        ).block("user2");
+    }
+
+    @Test
+    void shouldPropagateFailedResultFromPerformer() {
+
+        BlockActionPerformer performer =
+            mock(BlockActionPerformer.class);
+
+        ActionDelay delay =
+            mock(ActionDelay.class);
+
+        when(
+            performer.block("user2")
+        ).thenReturn(
+            ActionResult.FAILED
+        );
+
+        ActionManager manager =
+            new ActionManager(
+                false,
+                performer,
+                delay,
+                5
+            );
+
+        ActionResult result =
+            manager.process(
+                "user2",
+                true
+            );
+
+        assertEquals(
+            ActionResult.FAILED,
+            result
+        );
+
+        verify(
+            delay
+        ).waitBeforeAction(5);
+
+        verify(
+            performer
+        ).block("user2");
+    }
+
+    @Test
+    void shouldRejectNullBlockActionPerformer() {
+
+        ActionDelay delay =
+            mock(ActionDelay.class);
+
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new ActionManager(
+                true,
                 null,
-                true
-            );
-
-        assertEquals(
-            ActionResult.SKIPPED,
-            result
+                delay,
+                5
+            )
         );
     }
 
     @Test
-    void disabledExecutionShouldSkipAction() {
+    void shouldRejectNullActionDelay() {
 
-        ActionManager actionManager =
-            new ActionManager(false);
+        BlockActionPerformer performer =
+            mock(BlockActionPerformer.class);
 
-        ActionResult result =
-            actionManager.process(
-                "test.account",
-                true
-            );
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new ActionManager(
+                true,
+                performer,
+                null,
+                5
+            )
+        );
+    }
 
-        assertEquals(
-            ActionResult.SKIPPED,
-            result
+    @Test
+    void shouldRejectNegativeActionDelay() {
+
+        BlockActionPerformer performer =
+            mock(BlockActionPerformer.class);
+
+        ActionDelay delay =
+            mock(ActionDelay.class);
+
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new ActionManager(
+                true,
+                performer,
+                delay,
+                -1
+            )
         );
     }
 }

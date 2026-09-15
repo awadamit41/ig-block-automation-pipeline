@@ -634,6 +634,7 @@ class ApplicationTest {
             + "profile.directory=test-profile\n"
             + "wait.timeout.seconds=1\n"
             + "dry.run=true\n"
+            + "action.delay.seconds=0\n"
         );
     }
 }

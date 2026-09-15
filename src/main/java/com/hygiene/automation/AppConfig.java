@@ -38,6 +38,29 @@ public class AppConfig {
         }
     }
 
+    public int getActionDelaySeconds() {
+        String value =
+            getRequired("action.delay.seconds");
+
+        try {
+            int delay =
+                Integer.parseInt(value);
+
+            if (delay < 0) {
+                throw new IllegalArgumentException(
+                    "action.delay.seconds cannot be negative."
+                );
+            }
+
+            return delay;
+
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                "action.delay.seconds must be a valid integer."
+            );
+        }
+    }
+
     public String getTargetFile() {
         return getRequired("target.file");
     }

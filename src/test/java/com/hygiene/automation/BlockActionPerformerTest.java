@@ -18,15 +18,53 @@ import org.openqa.selenium.WebElement;
 
 class BlockActionPerformerTest {
 
-    private static final By BLOCK_BUTTON =
-        By.xpath("//button[normalize-space()='Block']");
+    private static final By OPTIONS_BUTTON =
+        By.xpath("//*[@aria-label='Options']/ancestor::div[@role='button'][1]");
+
+    private static final By BLOCK_MENU_ITEM =
+        By.xpath("//*[normalize-space()='Block']");
+
+    private static final By CONFIRM_BLOCK_BUTTON =
+        By.xpath("(//*[normalize-space()='Block'])[2]");
+
+    private static final By DISMISS_BUTTON =
+        By.xpath("//*[normalize-space()='Dismiss' or normalize-space()='OK']");
+
+    /**
+     * A no-op ActionDelay for tests, so nothing actually sleeps.
+     * Also records whether it was invoked, for assertions.
+     */
+    private static class FakeActionDelay implements ActionDelay {
+
+        private int callCount = 0;
+
+        @Override
+        public void waitBeforeAction(int seconds) {
+            callCount++;
+        }
+
+        int getCallCount() {
+            return callCount;
+        }
+    }
 
     @Test
     void shouldRejectNullDriver() {
 
         assertThrows(
             IllegalArgumentException.class,
-            () -> new BlockActionPerformer(null, true)
+            () -> new BlockActionPerformer(null, true, new FakeActionDelay())
+        );
+    }
+
+    @Test
+    void shouldRejectNullActionDelay() {
+
+        WebDriver driver = mock(WebDriver.class);
+
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new BlockActionPerformer(driver, true, null)
         );
     }
 
@@ -36,7 +74,7 @@ class BlockActionPerformerTest {
         WebDriver driver = mock(WebDriver.class);
 
         BlockActionPerformer performer =
-            new BlockActionPerformer(driver, true);
+            new BlockActionPerformer(driver, true, new FakeActionDelay());
 
         ActionResult result =
             performer.block("");
@@ -53,7 +91,7 @@ class BlockActionPerformerTest {
         WebDriver driver = mock(WebDriver.class);
 
         BlockActionPerformer performer =
-            new BlockActionPerformer(driver, true);
+            new BlockActionPerformer(driver, true, new FakeActionDelay());
 
         ActionResult result =
             performer.block(null);
@@ -65,18 +103,19 @@ class BlockActionPerformerTest {
     }
 
     @Test
-    void dryRunShouldLocateButtonButNeverClickIt() {
+    void dryRunShouldOpenMenuAndLocateBlockButNeverConfirm() {
 
         WebDriver driver = mock(WebDriver.class);
-        WebElement blockButton = mock(WebElement.class);
+        WebElement optionsButton = mock(WebElement.class);
+        WebElement blockMenuItem = mock(WebElement.class);
 
-        when(driver.findElement(BLOCK_BUTTON))
-            .thenReturn(blockButton);
-        when(blockButton.isDisplayed()).thenReturn(true);
-        when(blockButton.isEnabled()).thenReturn(true);
+        when(driver.findElement(OPTIONS_BUTTON))
+            .thenReturn(optionsButton);
+        when(driver.findElement(BLOCK_MENU_ITEM))
+            .thenReturn(blockMenuItem);
 
         BlockActionPerformer performer =
-            new BlockActionPerformer(driver, true);
+            new BlockActionPerformer(driver, true, new FakeActionDelay());
 
         ActionResult result =
             performer.block("test.user");
@@ -86,22 +125,36 @@ class BlockActionPerformerTest {
             result
         );
 
-        verify(blockButton, never()).click();
+        verify(optionsButton, times(1)).click();
+        verify(blockMenuItem, times(1)).click();
+
+        // dry-run must never reach the confirm/dismiss steps
+        verify(driver, never()).findElement(CONFIRM_BLOCK_BUTTON);
+        verify(driver, never()).findElement(DISMISS_BUTTON);
     }
 
     @Test
-    void executeModeShouldClickTheButtonOnce() {
+    void executeModeShouldRunFullSequenceAndReturnExecuted() {
 
         WebDriver driver = mock(WebDriver.class);
-        WebElement blockButton = mock(WebElement.class);
+        WebElement optionsButton = mock(WebElement.class);
+        WebElement blockMenuItem = mock(WebElement.class);
+        WebElement confirmButton = mock(WebElement.class);
+        WebElement dismissButton = mock(WebElement.class);
 
-        when(driver.findElement(BLOCK_BUTTON))
-            .thenReturn(blockButton);
-        when(blockButton.isDisplayed()).thenReturn(true);
-        when(blockButton.isEnabled()).thenReturn(true);
+        when(driver.findElement(OPTIONS_BUTTON))
+            .thenReturn(optionsButton);
+        when(driver.findElement(BLOCK_MENU_ITEM))
+            .thenReturn(blockMenuItem);
+        when(driver.findElement(CONFIRM_BLOCK_BUTTON))
+            .thenReturn(confirmButton);
+        when(driver.findElement(DISMISS_BUTTON))
+            .thenReturn(dismissButton);
+
+        FakeActionDelay actionDelay = new FakeActionDelay();
 
         BlockActionPerformer performer =
-            new BlockActionPerformer(driver, false);
+            new BlockActionPerformer(driver, false, actionDelay);
 
         ActionResult result =
             performer.block("test.user");
@@ -111,20 +164,28 @@ class BlockActionPerformerTest {
             result
         );
 
-        verify(blockButton, times(1)).click();
+        verify(optionsButton, times(1)).click();
+        verify(blockMenuItem, times(1)).click();
+        verify(confirmButton, times(1)).click();
+        verify(dismissButton, times(1)).click();
+
+        assertEquals(
+            1,
+            actionDelay.getCallCount()
+        );
     }
 
     @Test
     void shouldReportBlockControlPresent() {
 
         WebDriver driver = mock(WebDriver.class);
-        WebElement blockButton = mock(WebElement.class);
+        WebElement blockMenuItem = mock(WebElement.class);
 
-        when(driver.findElements(BLOCK_BUTTON))
-            .thenReturn(Collections.singletonList(blockButton));
+        when(driver.findElements(BLOCK_MENU_ITEM))
+            .thenReturn(Collections.singletonList(blockMenuItem));
 
         BlockActionPerformer performer =
-            new BlockActionPerformer(driver, true);
+            new BlockActionPerformer(driver, true, new FakeActionDelay());
 
         assertTrue(
             performer.isBlockControlPresent()
@@ -136,42 +197,14 @@ class BlockActionPerformerTest {
 
         WebDriver driver = mock(WebDriver.class);
 
-        when(driver.findElements(BLOCK_BUTTON))
+        when(driver.findElements(BLOCK_MENU_ITEM))
             .thenReturn(Collections.emptyList());
 
         BlockActionPerformer performer =
-            new BlockActionPerformer(driver, true);
+            new BlockActionPerformer(driver, true, new FakeActionDelay());
 
         assertFalse(
             performer.isBlockControlPresent()
-        );
-    }
-
-    @Test
-    void shouldRejectZeroTimeout() {
-
-        WebDriver driver = mock(WebDriver.class);
-
-        BlockActionPerformer performer =
-            new BlockActionPerformer(driver, true);
-
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> performer.findBlockControl(0)
-        );
-    }
-
-    @Test
-    void shouldRejectNegativeTimeout() {
-
-        WebDriver driver = mock(WebDriver.class);
-
-        BlockActionPerformer performer =
-            new BlockActionPerformer(driver, true);
-
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> performer.findBlockControl(-1)
         );
     }
 }

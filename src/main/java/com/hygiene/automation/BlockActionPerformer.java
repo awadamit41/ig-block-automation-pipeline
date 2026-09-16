@@ -1,7 +1,6 @@
 package com.hygiene.automation;
 
 import java.time.Duration;
-import java.util.List;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -15,8 +14,9 @@ public class BlockActionPerformer {
         By.xpath("//button[normalize-space()='Block']");
 
     private final WebDriver driver;
+    private final boolean dryRun;
 
-    public BlockActionPerformer(WebDriver driver) {
+    public BlockActionPerformer(WebDriver driver, boolean dryRun) {
 
         if (driver == null) {
             throw new IllegalArgumentException(
@@ -25,6 +25,7 @@ public class BlockActionPerformer {
         }
 
         this.driver = driver;
+        this.dryRun = dryRun;
     }
 
     public ActionResult block(String username) {
@@ -38,20 +39,53 @@ public class BlockActionPerformer {
             "BLOCK ACTION REQUESTED: @" + username
         );
 
-        /*
-         * Real account-changing execution is intentionally
-         * disabled in this prototype.
-         *
-         * The UI locator is kept separately so the project
-         * can demonstrate identification of the intended
-         * control without performing the account-changing click.
-         */
+        try {
 
-        System.out.println(
-            "Real account-changing execution is disabled."
-        );
+            WebElement blockButton =
+                findBlockControl(10);
 
-        return ActionResult.SKIPPED;
+            System.out.println(
+                "Block control located for @" + username
+            );
+            System.out.println(
+                "Block control text: " + blockButton.getText()
+            );
+            System.out.println(
+                "Block control is displayed: " + blockButton.isDisplayed()
+            );
+            System.out.println(
+                "Block control is enabled: " + blockButton.isEnabled()
+            );
+
+            if (dryRun) {
+
+                System.out.println(
+                    "DRY RUN: account-changing click was NOT performed."
+                );
+
+                return ActionResult.WOULD_EXECUTE;
+            }
+
+            blockButton.click();
+
+            System.out.println(
+                "BLOCK CONFIRMED for @" + username
+            );
+
+            return ActionResult.EXECUTED;
+
+        } catch (Exception e) {
+
+            System.err.println(
+                "Unable to complete block action for @" + username
+            );
+
+            System.err.println(
+                e.getClass().getSimpleName() + ": " + e.getMessage()
+            );
+
+            return ActionResult.FAILED;
+        }
     }
 
     public WebElement findBlockControl(int timeoutSeconds) {
@@ -69,17 +103,12 @@ public class BlockActionPerformer {
             );
 
         return wait.until(
-            ExpectedConditions.visibilityOfElementLocated(
-                BLOCK_BUTTON
-            )
+            ExpectedConditions.elementToBeClickable(BLOCK_BUTTON)
         );
     }
 
     public boolean isBlockControlPresent() {
 
-        List<WebElement> elements =
-            driver.findElements(BLOCK_BUTTON);
-
-        return !elements.isEmpty();
+        return !driver.findElements(BLOCK_BUTTON).isEmpty();
     }
 }

@@ -113,7 +113,7 @@ public class Application {
                 new ProfileVerifier(driver);
 
             BlockActionPerformer blockActionPerformer =
-                new BlockActionPerformer(driver);
+                new BlockActionPerformer(driver, dryRun);
 
             ActionDelay actionDelay =
                 new ThreadActionDelay();

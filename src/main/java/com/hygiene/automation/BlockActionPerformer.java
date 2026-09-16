@@ -1,8 +1,18 @@
 package com.hygiene.automation;
 
+import java.time.Duration;
+import java.util.List;
+
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class BlockActionPerformer {
+
+    private static final By BLOCK_BUTTON =
+        By.xpath("//button[normalize-space()='Block']");
 
     private final WebDriver driver;
 
@@ -29,11 +39,12 @@ public class BlockActionPerformer {
         );
 
         /*
-         * Real account-changing Selenium interaction is intentionally
+         * Real account-changing execution is intentionally
          * disabled in this prototype.
          *
-         * This class isolates the action boundary so the rest of the
-         * application does not depend on Selenium-specific action logic.
+         * The UI locator is kept separately so the project
+         * can demonstrate identification of the intended
+         * control without performing the account-changing click.
          */
 
         System.out.println(
@@ -41,5 +52,34 @@ public class BlockActionPerformer {
         );
 
         return ActionResult.SKIPPED;
+    }
+
+    public WebElement findBlockControl(int timeoutSeconds) {
+
+        if (timeoutSeconds <= 0) {
+            throw new IllegalArgumentException(
+                "Timeout must be greater than 0."
+            );
+        }
+
+        WebDriverWait wait =
+            new WebDriverWait(
+                driver,
+                Duration.ofSeconds(timeoutSeconds)
+            );
+
+        return wait.until(
+            ExpectedConditions.visibilityOfElementLocated(
+                BLOCK_BUTTON
+            )
+        );
+    }
+
+    public boolean isBlockControlPresent() {
+
+        List<WebElement> elements =
+            driver.findElements(BLOCK_BUTTON);
+
+        return !elements.isEmpty();
     }
 }

@@ -34,12 +34,17 @@ public class BlockActionPerformer {
         By.xpath("//*[normalize-space()='Dismiss' or normalize-space()='OK']");
 
     private static final Duration STEP_TIMEOUT = Duration.ofSeconds(10);
-    private static final long POST_ACTION_WAIT_MILLIS = 3000L;
+    private static final int POST_ACTION_WAIT_SECONDS = 3;
 
     private final WebDriver driver;
     private final boolean dryRun;
+    private final ActionDelay actionDelay;
 
-    public BlockActionPerformer(WebDriver driver, boolean dryRun, ActionDelay actionDelay) {
+    public BlockActionPerformer(
+        WebDriver driver,
+        boolean dryRun,
+        ActionDelay actionDelay
+    ) {
 
         if (driver == null) {
             throw new IllegalArgumentException(
@@ -51,7 +56,7 @@ public class BlockActionPerformer {
             throw new IllegalArgumentException(
                 "Action delay cannot be null."
             );
-        }  
+        }
 
         this.driver = driver;
         this.dryRun = dryRun;
@@ -101,19 +106,9 @@ public class BlockActionPerformer {
                 "BLOCK CONFIRMED for @" + username
             );
 
-            Thread.sleep(POST_ACTION_WAIT_MILLIS);
+            actionDelay.waitBeforeAction(POST_ACTION_WAIT_SECONDS);
 
             return ActionResult.EXECUTED;
-
-        } catch (InterruptedException e) {
-
-            Thread.currentThread().interrupt();
-
-            System.err.println(
-                "Block action interrupted for @" + username
-            );
-
-            return ActionResult.FAILED;
 
         } catch (Exception e) {
 

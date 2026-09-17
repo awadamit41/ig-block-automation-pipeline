@@ -39,7 +39,7 @@ public class BlockActionPerformer {
     private final WebDriver driver;
     private final boolean dryRun;
 
-    public BlockActionPerformer(WebDriver driver, boolean dryRun) {
+    public BlockActionPerformer(WebDriver driver, boolean dryRun, ActionDelay actionDelay) {
 
         if (driver == null) {
             throw new IllegalArgumentException(
@@ -47,8 +47,15 @@ public class BlockActionPerformer {
             );
         }
 
+        if (actionDelay == null) {
+            throw new IllegalArgumentException(
+                "Action delay cannot be null."
+            );
+        }  
+
         this.driver = driver;
         this.dryRun = dryRun;
+        this.actionDelay = actionDelay;
     }
 
     public ActionResult block(String username) {

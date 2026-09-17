@@ -112,11 +112,13 @@ public class Application {
             ProfileVerifier verifier =
                 new ProfileVerifier(driver);
 
-            BlockActionPerformer blockActionPerformer =
-                new BlockActionPerformer(driver, dryRun);
-
             ActionDelay actionDelay =
                 new ThreadActionDelay();
+
+            BlockActionPerformer blockActionPerformer =
+                new BlockActionPerformer(driver, dryRun, actionDelay);
+
+            
 
             ActionManager actionManager =
                 new ActionManager(

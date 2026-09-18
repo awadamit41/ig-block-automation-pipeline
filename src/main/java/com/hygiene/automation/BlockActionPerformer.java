@@ -3,6 +3,7 @@ package com.hygiene.automation;
 import java.time.Duration;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -22,14 +23,12 @@ public class BlockActionPerformer {
     // Step 3: the confirm dialog's "Block" button. Instagram shows a
     // second element also reading "Block" once the confirm dialog
     // opens. TODO: verify this is really the second match on your
-    // account's current DOM — if the menu item disappears before the
-    // dialog renders, this index may need to change to [1].
+    // account's current DOM.
     private static final By CONFIRM_BLOCK_BUTTON =
         By.xpath("(//*[normalize-space()='Block'])[2]");
 
     // Step 4: the "Dismiss"/"OK" button on the post-block confirmation.
-    // TODO: verify actual text — Instagram has used both "Dismiss"
-    // and "OK" at different times.
+    // TODO: verify actual text.
     private static final By DISMISS_BUTTON =
         By.xpath("//*[normalize-space()='Dismiss' or normalize-space()='OK']");
 
@@ -70,41 +69,48 @@ public class BlockActionPerformer {
         }
 
         System.out.println();
-        System.out.println(
-            "BLOCK ACTION REQUESTED: @" + username
-        );
+        System.out.println("BLOCK ACTION REQUESTED: @" + username);
+        System.out.println("Current URL: " + driver.getCurrentUrl());
 
         try {
 
+            System.out.println("STEP 1: locating Options button...");
             WebElement optionsButton =
-                waitFor(OPTIONS_BUTTON);
-            optionsButton.click();
+                waitFor(OPTIONS_BUTTON, "OPTIONS_BUTTON");
+            logElementInfo(optionsButton, "OPTIONS_BUTTON");
+            jsClick(optionsButton);
+            System.out.println("STEP 1: clicked.");
 
+            System.out.println("STEP 2: locating Block menu item...");
             WebElement blockMenuItem =
-                waitFor(BLOCK_MENU_ITEM);
-            blockMenuItem.click();
+                waitFor(BLOCK_MENU_ITEM, "BLOCK_MENU_ITEM");
+            logElementInfo(blockMenuItem, "BLOCK_MENU_ITEM");
+            jsClick(blockMenuItem);
+            System.out.println("STEP 2: clicked.");
 
             if (dryRun) {
-
                 System.out.println(
                     "DRY RUN: options menu opened and Block located; "
                     + "confirm click was NOT performed."
                 );
-
                 return ActionResult.WOULD_EXECUTE;
             }
 
+            System.out.println("STEP 3: locating confirm Block button...");
             WebElement confirmButton =
-                waitFor(CONFIRM_BLOCK_BUTTON);
-            confirmButton.click();
+                waitFor(CONFIRM_BLOCK_BUTTON, "CONFIRM_BLOCK_BUTTON");
+            logElementInfo(confirmButton, "CONFIRM_BLOCK_BUTTON");
+            jsClick(confirmButton);
+            System.out.println("STEP 3: clicked.");
 
+            System.out.println("STEP 4: locating Dismiss button...");
             WebElement dismissButton =
-                waitFor(DISMISS_BUTTON);
-            dismissButton.click();
+                waitFor(DISMISS_BUTTON, "DISMISS_BUTTON");
+            logElementInfo(dismissButton, "DISMISS_BUTTON");
+            jsClick(dismissButton);
+            System.out.println("STEP 4: clicked.");
 
-            System.out.println(
-                "BLOCK CONFIRMED for @" + username
-            );
+            System.out.println("BLOCK CONFIRMED for @" + username);
 
             actionDelay.waitBeforeAction(POST_ACTION_WAIT_SECONDS);
 
@@ -118,23 +124,77 @@ public class BlockActionPerformer {
             System.err.println(
                 e.getClass().getSimpleName() + ": " + e.getMessage()
             );
+            System.err.println("URL at failure: " + driver.getCurrentUrl());
+
+            dumpPageSourceSnippet();
 
             return ActionResult.FAILED;
         }
     }
 
-    private WebElement waitFor(By locator) {
+    private WebElement waitFor(By locator, String label) {
 
-        WebDriverWait wait =
-            new WebDriverWait(driver, STEP_TIMEOUT);
+        WebDriverWait wait = new WebDriverWait(driver, STEP_TIMEOUT);
 
-        return wait.until(
-            ExpectedConditions.elementToBeClickable(locator)
+        try {
+            return wait.until(
+                ExpectedConditions.elementToBeClickable(locator)
+            );
+        } catch (org.openqa.selenium.TimeoutException e) {
+            System.err.println(
+                "FAILED at " + label + " — locator never became "
+                + "clickable: " + locator
+            );
+            throw e;
+        }
+    }
+
+    private void dumpPageSourceSnippet() {
+
+        try {
+            String source = driver.getPageSource();
+            int limit = Math.min(source.length(), 2000);
+
+            System.err.println(
+                "--- Page source snippet (first " + limit + " chars) ---"
+            );
+            System.err.println(source.substring(0, limit));
+            System.err.println("--- end snippet ---");
+
+        } catch (Exception e) {
+            System.err.println(
+                "Could not capture page source: " + e.getMessage()
+            );
+        }
+    }
+
+    private void jsClick(WebElement element) {
+
+        ((JavascriptExecutor) driver).executeScript(
+            "arguments[0].scrollIntoView({block: 'center'}); "
+            + "arguments[0].click();",
+            element
         );
     }
 
-    public boolean isBlockControlPresent() {
+    private void logElementInfo(WebElement element, String label) {
 
+        try {
+            System.out.println(
+                label + " -> tag=" + element.getTagName()
+                + " text='" + element.getText() + "'"
+                + " size=" + element.getSize()
+                + " location=" + element.getLocation()
+            );
+        } catch (Exception e) {
+            System.out.println(
+                label + " -> could not read element info: "
+                + e.getMessage()
+            );
+        }
+    }
+
+    public boolean isBlockControlPresent() {
         return !driver.findElements(BLOCK_MENU_ITEM).isEmpty();
     }
 }

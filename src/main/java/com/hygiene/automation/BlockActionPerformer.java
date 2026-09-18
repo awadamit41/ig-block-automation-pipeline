@@ -120,7 +120,7 @@ public class BlockActionPerformer {
 
             System.err.println(
                 "Unable to complete block action for @" + username
-            );
+            ); 
             System.err.println(
                 e.getClass().getSimpleName() + ": " + e.getMessage()
             );

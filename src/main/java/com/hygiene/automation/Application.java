@@ -125,7 +125,7 @@ public class Application {
                     dryRun,
                     blockActionPerformer,
                     actionDelay,
-                    actionDelaySeconds
+                    config.getActionDelaySeconds()
                 );
 
             ResultLogger logger =

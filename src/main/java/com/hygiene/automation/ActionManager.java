@@ -33,18 +33,13 @@ public class ActionManager implements ActionExecutor {
         }
 
         this.dryRun = dryRun;
-        this.blockActionPerformer =
-            blockActionPerformer;
+        this.blockActionPerformer = blockActionPerformer;
         this.actionDelay = actionDelay;
-        this.actionDelaySeconds =
-            actionDelaySeconds;
+        this.actionDelaySeconds = actionDelaySeconds;
     }
 
     @Override
-    public ActionResult process(
-        String username,
-        boolean verified
-    ) {
+    public ActionResult process(String username, boolean verified) {
 
         if (username == null || username.isBlank()) {
             return ActionResult.SKIPPED;
@@ -54,27 +49,19 @@ public class ActionManager implements ActionExecutor {
             System.out.println(
                 "ACTION SKIPPED: profile was not verified."
             );
-
             return ActionResult.SKIPPED;
         }
 
         if (dryRun) {
-
             System.out.println();
-            System.out.println(
-                "DRY RUN: WOULD BLOCK @" + username
-            );
-
+            System.out.println("DRY RUN: WOULD BLOCK @" + username);
             System.out.println(
                 "No account-changing action was performed."
             );
-
             return ActionResult.WOULD_EXECUTE;
         }
 
-        actionDelay.waitBeforeAction(
-            actionDelaySeconds
-        );
+        actionDelay.waitBeforeAction(actionDelaySeconds);
 
         return blockActionPerformer.block(username);
     }

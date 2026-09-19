@@ -14,7 +14,7 @@ logs/
 *.log
 
 # Local Selenium / Edge profile
-social-media-hygiene-edge-profile/
+ig-block-automation-pipeline/
 
 # Local configuration overrides
 *.local.properties

@@ -1,4 +1,4 @@
-# Social Media Account Hygiene Automation
+# ig-block-automation-pipeline
 
 [![Java CI](https://github.com/awadamit41/Social-Media-Account-Hygiene-Automation/actions/workflows/maven.yml/badge.svg)](https://github.com/awadamit41/Social-Media-Account-Hygiene-Automation/actions/workflows/maven.yml)
 
@@ -8,7 +8,7 @@
 ![Tests](https://img.shields.io/badge/tests-117%20passing-brightgreen)
 ![Coverage](https://img.shields.io/badge/JaCoCo-coverage%20checks%20passing-brightgreen)
 
-A Java-based Selenium automation framework for structured social-media account hygiene workflows.
+A Java-based Selenium automation pipeline for verified, safety-gated Instagram blocking workflows.
 
 The project focuses on reliable target ingestion, profile navigation, profile verification, action handling, structured result logging, configuration validation, CLI controls, and resilient batch processing.
 

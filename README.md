@@ -5,14 +5,14 @@
 ![Java](https://img.shields.io/badge/Java-25-orange)
 ![Maven](https://img.shields.io/badge/Maven-3.9+-C71A36)
 ![Selenium](https://img.shields.io/badge/Selenium-4.35.0-43B02A)
-![Tests](https://img.shields.io/badge/tests-90%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/JaCoCo-96%25%20instructions-brightgreen)
+![Tests](https://img.shields.io/badge/tests-117%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/JaCoCo-coverage%20checks%20passing-brightgreen)
 
 A Java-based Selenium automation framework for structured social-media account hygiene workflows.
 
-The project focuses on reliable target ingestion, profile navigation, profile verification, dry-run action handling, structured result logging, configuration validation, CLI controls, and resilient batch processing.
+The project focuses on reliable target ingestion, profile navigation, profile verification, action handling, structured result logging, configuration validation, CLI controls, and resilient batch processing.
 
-> **Important:** Account-changing operations are intentionally disabled in this prototype. `--execute` does not perform real account-changing actions.
+> **Important:** `--execute` performs real, account-changing block actions against the currently logged-in browser session. `--dry-run` is the safe default and should be used for demonstrations, testing, and CI. See [Safety & Responsible Use](#safety--responsible-use) before running `--execute` against any real account.
 
 ---
 
@@ -23,19 +23,14 @@ The project uses automated quality gates through GitHub Actions.
 - Java 25
 - Maven build
 - JUnit 5 automated tests
-- Mockito-based unit testing
+- Mockito-based unit testing (including mocked `WebDriver`/`JavascriptExecutor`/`TakesScreenshot` — no real browser or account required to run the suite)
 - Selenium WebDriver
 - Checkstyle with zero-violation enforcement
 - JaCoCo code coverage
-- Instruction coverage target: 50% minimum
-- Branch coverage target: 50% minimum
 - JaCoCo HTML report published as a CI artifact
 - GitHub Actions validation on pushes and pull requests
 
-Current local coverage:
-
-- **96% instruction coverage**
-- **90% branch coverage**
+Local test suite: **117 tests passing**, 0 failures. See the CI badge above for current status; run `mvn clean verify` locally and check `target/site/jacoco/index.html` for exact coverage numbers.
 
 ---
 
@@ -47,13 +42,27 @@ Current local coverage:
 4. `TargetLoader` reads and validates target usernames.
 5. `TargetProcessor` handles each target independently.
 6. `ProfileNavigator` opens the target profile.
-7. `ProfileVerifier` confirms the expected profile URL.
-8. `ActionManager` evaluates the configured action mode.
-9. `ResultLogger` records the processing result.
-10. `ProcessingSummary` produces the final execution summary.
+7. `ProfileVerifier` confirms the expected profile URL — an unverified profile is never passed to the action layer.
+8. `ActionManager` evaluates the configured action mode (dry-run vs. execute) and, in execute mode, delegates to `BlockActionPerformer`.
+9. `BlockActionPerformer` performs the browser interaction: opens the profile's options menu, selects Block, confirms in the dialog, and dismisses the follow-up screen if one appears. In dry-run mode, it stops after locating the menu's Block option and never opens the confirm dialog.
+10. `ResultLogger` records the processing result (`EXECUTED`, `WOULD_EXECUTE`, `SKIPPED`, or `FAILED`) to `logs/results.csv`.
+11. `ProcessingSummary` produces the final execution summary.
 
-> **Safety:** Account-changing operations are intentionally disabled in this prototype. Dry-run processing verifies navigation and action intent without modifying an account.
+> **Safety gates:** Profile verification happens before any action is attempted. Dry-run mode is enforced inside `BlockActionPerformer` itself, not just at the caller — even if upstream configuration is wrong, the confirm/dismiss steps are never reached unless `--execute` is explicitly set. One target's failure (navigation, verification, or action) does not stop the rest of the batch.
 
+---
+
+## Safety & Responsible Use
+
+This tool interacts with a live, third-party platform using non-official browser automation rather than a public API. A few things worth knowing before using `--execute`:
+
+- **Test on a secondary account first.** Run against test targets you control before pointing it at real accounts.
+- **`--dry-run` is the default for a reason.** It exercises the full pipeline — navigation, verification, locating the action — without making any account change.
+- **Run in small batches**, not the full target list at once, especially on a first run against a given session.
+- **UI locators are DOM-dependent and can break** if Instagram changes its interface. `BlockActionPerformer` includes diagnostic logging (per-step console output, element size/location, and screenshots on failure) specifically to make it easy to see where a locator has drifted.
+- Automated browser interaction with Instagram outside its official API is against Instagram's Terms of Use. This project is a portfolio/engineering demonstration of a controlled automation pipeline (verification gates, dry-run enforcement, structured logging, failure isolation) — not a recommendation for unattended, large-scale use against accounts you don't control.
+
+---
 
 ## Architecture
 
@@ -75,6 +84,8 @@ CLI / Configuration
         ├── Verifier
         │
         ├── Action Executor
+        │       │
+        │       └── Block Action Performer (Selenium click sequence)
         │
         └── Result Recorder
         │
@@ -83,3 +94,4 @@ CLI / Configuration
         │
         ▼
  Processing Summary
+```

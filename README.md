@@ -95,3 +95,85 @@ CLI / Configuration
         ▼
  Processing Summary
 ```
+
+
+
+## Getting Started
+
+### Prerequisites
+
+- Java 25 (JDK)
+- Maven 3.9+
+- Microsoft Edge (or update `BrowserDriverFactory`/config for another supported browser)
+- EdgeDriver matching your installed Edge version (Selenium Manager typically handles this automatically)
+
+### Build
+
+```bash
+mvn clean compile
+```
+
+### Run the test suite
+
+```bash
+mvn clean verify
+```
+
+This runs the full JUnit suite (117 tests), Checkstyle, and JaCoCo coverage — all against mocked `WebDriver`/browser dependencies. No real browser or Instagram account is needed for this step.
+
+### Prepare your target list
+
+Create a `targets.csv` file in the project root with one username per line:
+
+```text
+example_user1
+example_user2
+example_user3
+```
+
+Invalid entries (malformed usernames, empty lines) are automatically skipped and reported — they don't stop the rest of the batch from loading.
+
+### Authenticate the browser session
+
+Before running against real profiles, log into the target Instagram account manually in the browser profile this project uses (see `BrowserDriverFactory`/config for the profile path). The automation drives an already-authenticated session — it does not handle login itself.
+
+### Run — dry-run (safe default)
+
+Dry-run exercises the full pipeline (navigation, verification, locating the Block option) without making any account change:
+
+```bash
+mvn exec:java "-Dexec.args=--targets targets.csv --dry-run"
+```
+
+> **Windows PowerShell users:** the `-D` property must be quoted exactly as shown above (`"-Dexec.args=..."`), with the flags *inside* the quotes. Splitting the quotes differently (e.g. `-Dexec.args="--targets targets.csv --dry-run"`) can cause PowerShell to mis-parse the argument and produce an `Unknown lifecycle phase` error.
+
+### Run — execute (performs real account-changing blocks)
+
+```bash
+mvn exec:java "-Dexec.args=--targets targets.csv --execute"
+```
+
+Read [Safety & Responsible Use](#safety--responsible-use) before using this. `--dry-run` and `--execute` cannot be combined — the CLI rejects that.
+
+### Alternative: run the built jar directly
+
+If the Maven exec plugin gives you trouble, build and run the classes directly:
+
+```bash
+mvn clean package
+java -cp target/classes com.hygiene.automation.Main --targets targets.csv --dry-run
+```
+
+### Output
+
+- **Console** — per-target progress, including step-by-step diagnostic logging inside `BlockActionPerformer` (element details, click confirmations) and a final processing summary.
+- **`logs/results.csv`** — structured, per-target results (`EXECUTED`, `WOULD_EXECUTE`, `SKIPPED`, `FAILED`) with timestamps, for later auditing.
+- **`logs/screenshots/`** — a screenshot is captured after the options menu opens and again on any failure, to make DOM/locator issues easy to diagnose without re-running.
+
+### View coverage report
+
+After `mvn clean verify`, open:
+
+```text
+target/site/jacoco/index.html
+```

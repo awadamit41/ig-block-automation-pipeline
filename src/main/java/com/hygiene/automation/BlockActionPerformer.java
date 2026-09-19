@@ -1,9 +1,13 @@
 package com.hygiene.automation;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -23,12 +27,14 @@ public class BlockActionPerformer {
     // Step 3: the confirm dialog's "Block" button. Instagram shows a
     // second element also reading "Block" once the confirm dialog
     // opens. TODO: verify this is really the second match on your
-    // account's current DOM.
+    // account's current DOM — if the menu item disappears before the
+    // dialog renders, this index may need to change to [1].
     private static final By CONFIRM_BLOCK_BUTTON =
         By.xpath("(//*[normalize-space()='Block'])[2]");
 
     // Step 4: the "Dismiss"/"OK" button on the post-block confirmation.
-    // TODO: verify actual text.
+    // TODO: verify actual text — Instagram has used both "Dismiss"
+    // and "OK" at different times.
     private static final By DISMISS_BUTTON =
         By.xpath("//*[normalize-space()='Dismiss' or normalize-space()='OK']");
 
@@ -69,8 +75,12 @@ public class BlockActionPerformer {
         }
 
         System.out.println();
-        System.out.println("BLOCK ACTION REQUESTED: @" + username);
-        System.out.println("Current URL: " + driver.getCurrentUrl());
+        System.out.println(
+            "BLOCK ACTION REQUESTED: @" + username
+        );
+        System.out.println(
+            "Current URL: " + driver.getCurrentUrl()
+        );
 
         try {
 
@@ -88,11 +98,19 @@ public class BlockActionPerformer {
             jsClick(blockMenuItem);
             System.out.println("STEP 2: clicked.");
 
+            System.out.println(
+                "Elements matching 'Block' right now: "
+                + driver.findElements(BLOCK_MENU_ITEM).size()
+            );
+            captureScreenshot(username, "after-step2");
+
             if (dryRun) {
+
                 System.out.println(
                     "DRY RUN: options menu opened and Block located; "
                     + "confirm click was NOT performed."
                 );
+
                 return ActionResult.WOULD_EXECUTE;
             }
 
@@ -110,7 +128,9 @@ public class BlockActionPerformer {
             jsClick(dismissButton);
             System.out.println("STEP 4: clicked.");
 
-            System.out.println("BLOCK CONFIRMED for @" + username);
+            System.out.println(
+                "BLOCK CONFIRMED for @" + username
+            );
 
             actionDelay.waitBeforeAction(POST_ACTION_WAIT_SECONDS);
 
@@ -120,12 +140,15 @@ public class BlockActionPerformer {
 
             System.err.println(
                 "Unable to complete block action for @" + username
-            ); 
+            );
             System.err.println(
                 e.getClass().getSimpleName() + ": " + e.getMessage()
             );
-            System.err.println("URL at failure: " + driver.getCurrentUrl());
+            System.err.println(
+                "URL at failure: " + driver.getCurrentUrl()
+            );
 
+            captureScreenshot(username, "on-failure");
             dumpPageSourceSnippet();
 
             return ActionResult.FAILED;
@@ -134,7 +157,8 @@ public class BlockActionPerformer {
 
     private WebElement waitFor(By locator, String label) {
 
-        WebDriverWait wait = new WebDriverWait(driver, STEP_TIMEOUT);
+        WebDriverWait wait =
+            new WebDriverWait(driver, STEP_TIMEOUT);
 
         try {
             return wait.until(
@@ -149,6 +173,34 @@ public class BlockActionPerformer {
         }
     }
 
+    private void captureScreenshot(String username, String label) {
+
+        try {
+            byte[] pngBytes =
+                ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+
+            Path dir = Path.of("logs", "screenshots");
+            Files.createDirectories(dir);
+
+            String safeUsername = username.replaceAll("[^a-zA-Z0-9._-]", "_");
+            String fileName =
+                safeUsername + "-" + label + "-"
+                + System.currentTimeMillis() + ".png";
+
+            Path target = dir.resolve(fileName);
+            Files.write(target, pngBytes);
+
+            System.out.println(
+                "Screenshot saved: " + target.toAbsolutePath()
+            );
+
+        } catch (Exception e) {
+            System.err.println(
+                "Could not capture screenshot: " + e.getMessage()
+            );
+        }
+    }
+
     private void dumpPageSourceSnippet() {
 
         try {
@@ -156,7 +208,8 @@ public class BlockActionPerformer {
             int limit = Math.min(source.length(), 2000);
 
             System.err.println(
-                "--- Page source snippet (first " + limit + " chars) ---"
+                "--- Page source snippet (first "
+                + limit + " chars) ---"
             );
             System.err.println(source.substring(0, limit));
             System.err.println("--- end snippet ---");
@@ -181,7 +234,8 @@ public class BlockActionPerformer {
 
         try {
             System.out.println(
-                label + " -> tag=" + element.getTagName()
+                label + " -> tag="
+                + element.getTagName()
                 + " text='" + element.getText() + "'"
                 + " size=" + element.getSize()
                 + " location=" + element.getLocation()
@@ -195,6 +249,7 @@ public class BlockActionPerformer {
     }
 
     public boolean isBlockControlPresent() {
+
         return !driver.findElements(BLOCK_MENU_ITEM).isEmpty();
     }
 }

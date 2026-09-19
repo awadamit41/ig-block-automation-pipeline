@@ -24,17 +24,21 @@ public class BlockActionPerformer {
     private static final By BLOCK_MENU_ITEM =
         By.xpath("//*[normalize-space()='Block']");
 
-    // Step 3: the confirm dialog's "Block" button. Instagram shows a
-    // second element also reading "Block" once the confirm dialog
-    // opens. TODO: verify this is really the second match on your
-    // account's current DOM — if the menu item disappears before the
-    // dialog renders, this index may need to change to [1].
+    // Step 3: the confirm dialog's "Block" button. Confirmed via
+    // DevTools: once the menu's "Block" item is clicked, that menu
+    // closes, leaving only ONE "Block"-text button on screen — the
+    // confirm dialog's own <button>. No index needed; scoping to the
+    // <button> tag (not "//*") also avoids accidentally matching the
+    // menu item, which is a <div>, not a <button>.
     private static final By CONFIRM_BLOCK_BUTTON =
-        By.xpath("(//*[normalize-space()='Block'])[2]");
+        By.xpath("//button[normalize-space()='Block']");
 
-    // Step 4: the "Dismiss"/"OK" button on the post-block confirmation.
-    // TODO: verify actual text — Instagram has used both "Dismiss"
-    // and "OK" at different times.
+    // Step 4: optional. The confirm dialog observed in DevTools shows
+    // only "Block" / "Cancel" — no separate Dismiss/OK screen after
+    // confirming. This locator is kept as a best-effort check; if it
+    // isn't found quickly, the block is still treated as successful
+    // rather than failing the whole action over a step that may not
+    // exist.
     private static final By DISMISS_BUTTON =
         By.xpath("//*[normalize-space()='Dismiss' or normalize-space()='OK']");
 
@@ -121,12 +125,23 @@ public class BlockActionPerformer {
             jsClick(confirmButton);
             System.out.println("STEP 3: clicked.");
 
-            System.out.println("STEP 4: locating Dismiss button...");
-            WebElement dismissButton =
-                waitFor(DISMISS_BUTTON, "DISMISS_BUTTON");
-            logElementInfo(dismissButton, "DISMISS_BUTTON");
-            jsClick(dismissButton);
-            System.out.println("STEP 4: clicked.");
+            System.out.println("STEP 4: checking for optional Dismiss button...");
+            try {
+                WebDriverWait shortWait =
+                    new WebDriverWait(driver, Duration.ofSeconds(3));
+                WebElement dismissButton =
+                    shortWait.until(
+                        ExpectedConditions.elementToBeClickable(DISMISS_BUTTON)
+                    );
+                logElementInfo(dismissButton, "DISMISS_BUTTON");
+                jsClick(dismissButton);
+                System.out.println("STEP 4: Dismiss found and clicked.");
+            } catch (org.openqa.selenium.TimeoutException e) {
+                System.out.println(
+                    "STEP 4: no Dismiss step appeared — treating block "
+                    + "as complete."
+                );
+            }
 
             System.out.println(
                 "BLOCK CONFIRMED for @" + username

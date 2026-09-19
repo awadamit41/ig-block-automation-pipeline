@@ -27,7 +27,7 @@ class BlockActionPerformerTest {
         By.xpath("//*[normalize-space()='Block']");
 
     private static final By CONFIRM_BLOCK_BUTTON =
-        By.xpath("(//*[normalize-space()='Block'])[2]");
+        By.xpath("//button[normalize-space()='Block']");
 
     private static final By DISMISS_BUTTON =
         By.xpath("//*[normalize-space()='Dismiss' or normalize-space()='OK']");

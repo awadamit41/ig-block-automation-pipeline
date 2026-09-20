@@ -1,7 +1,7 @@
 # ig-block-automation-pipeline
 
 [![Java CI](https://github.com/awadamit41/Social-Media-Account-Hygiene-Automation/actions/workflows/maven.yml/badge.svg)](https://github.com/awadamit41/Social-Media-Account-Hygiene-Automation/actions/workflows/maven.yml)
-
+ 
 ![Java](https://img.shields.io/badge/Java-25-orange)
 ![Maven](https://img.shields.io/badge/Maven-3.9+-C71A36)
 ![Selenium](https://img.shields.io/badge/Selenium-4.35.0-43B02A)

@@ -23,7 +23,7 @@ The project uses automated quality gates through GitHub Actions.
 - Java 25
 - Maven build
 - JUnit 5 automated tests
-- Mockito-based unit testing (including mocked `WebDriver`/`JavascriptExecutor`/`TakesScreenshot` — no real browser or account required to run the suite)
+- Mockito-based unit testing (including mocked `WebDriver`/`JavascriptExecutor`/`TakesScreenshot`   no real browser or account required to run the suite)
 - Selenium WebDriver
 - Checkstyle with zero-violation enforcement
 - JaCoCo code coverage
@@ -42,13 +42,13 @@ Local test suite: **117 tests passing**, 0 failures. See the CI badge above for 
 4. `TargetLoader` reads and validates target usernames.
 5. `TargetProcessor` handles each target independently.
 6. `ProfileNavigator` opens the target profile.
-7. `ProfileVerifier` confirms the expected profile URL — an unverified profile is never passed to the action layer.
+7. `ProfileVerifier` confirms the expected profile URL   an unverified profile is never passed to the action layer.
 8. `ActionManager` evaluates the configured action mode (dry-run vs. execute) and, in execute mode, delegates to `BlockActionPerformer`.
 9. `BlockActionPerformer` performs the browser interaction: opens the profile's options menu, selects Block, confirms in the dialog, and dismisses the follow-up screen if one appears. In dry-run mode, it stops after locating the menu's Block option and never opens the confirm dialog.
 10. `ResultLogger` records the processing result (`EXECUTED`, `WOULD_EXECUTE`, `SKIPPED`, or `FAILED`) to `logs/results.csv`.
 11. `ProcessingSummary` produces the final execution summary.
 
-> **Safety gates:** Profile verification happens before any action is attempted. Dry-run mode is enforced inside `BlockActionPerformer` itself, not just at the caller — even if upstream configuration is wrong, the confirm/dismiss steps are never reached unless `--execute` is explicitly set. One target's failure (navigation, verification, or action) does not stop the rest of the batch.
+> **Safety gates:** Profile verification happens before any action is attempted. Dry-run mode is enforced inside `BlockActionPerformer` itself, not just at the caller   even if upstream configuration is wrong, the confirm/dismiss steps are never reached unless `--execute` is explicitly set. One target's failure (navigation, verification, or action) does not stop the rest of the batch.
 
 ---
 
@@ -57,10 +57,10 @@ Local test suite: **117 tests passing**, 0 failures. See the CI badge above for 
 This tool interacts with a live, third-party platform using non-official browser automation rather than a public API. A few things worth knowing before using `--execute`:
 
 - **Test on a secondary account first.** Run against test targets you control before pointing it at real accounts.
-- **`--dry-run` is the default for a reason.** It exercises the full pipeline — navigation, verification, locating the action — without making any account change.
+- **`--dry-run` is the default for a reason.** It exercises the full pipeline   navigation, verification, locating the action   without making any account change.
 - **Run in small batches**, not the full target list at once, especially on a first run against a given session.
 - **UI locators are DOM-dependent and can break** if Instagram changes its interface. `BlockActionPerformer` includes diagnostic logging (per-step console output, element size/location, and screenshots on failure) specifically to make it easy to see where a locator has drifted.
-- Automated browser interaction with Instagram outside its official API is against Instagram's Terms of Use. This project is a portfolio/engineering demonstration of a controlled automation pipeline (verification gates, dry-run enforcement, structured logging, failure isolation) — not a recommendation for unattended, large-scale use against accounts you don't control.
+- Automated browser interaction with Instagram outside its official API is against Instagram's Terms of Use. This project is a portfolio/engineering demonstration of a controlled automation pipeline (verification gates, dry-run enforcement, structured logging, failure isolation)   not a recommendation for unattended, large-scale use against accounts you don't control.
 
 ---
 
@@ -119,7 +119,7 @@ mvn clean compile
 mvn clean verify
 ```
 
-This runs the full JUnit suite (117 tests), Checkstyle, and JaCoCo coverage — all against mocked `WebDriver`/browser dependencies. No real browser or Instagram account is needed for this step.
+This runs the full JUnit suite (117 tests), Checkstyle, and JaCoCo coverage   all against mocked `WebDriver`/browser dependencies. No real browser or Instagram account is needed for this step.
 
 ### Prepare your target list
 
@@ -131,13 +131,13 @@ example_user2
 example_user3
 ```
 
-Invalid entries (malformed usernames, empty lines) are automatically skipped and reported — they don't stop the rest of the batch from loading.
+Invalid entries (malformed usernames, empty lines) are automatically skipped and reported   they don't stop the rest of the batch from loading.
 
 ### Authenticate the browser session
 
-Before running against real profiles, log into the target Instagram account manually in the browser profile this project uses (see `BrowserDriverFactory`/config for the profile path). The automation drives an already-authenticated session — it does not handle login itself.
+Before running against real profiles, log into the target Instagram account manually in the browser profile this project uses (see `BrowserDriverFactory`/config for the profile path). The automation drives an already-authenticated session   it does not handle login itself.
 
-### Run — dry-run (safe default)
+### Run   dry-run (safe default)
 
 Dry-run exercises the full pipeline (navigation, verification, locating the Block option) without making any account change:
 
@@ -147,13 +147,13 @@ mvn exec:java "-Dexec.args=--targets targets.csv --dry-run"
 
 > **Windows PowerShell users:** the `-D` property must be quoted exactly as shown above (`"-Dexec.args=..."`), with the flags *inside* the quotes. Splitting the quotes differently (e.g. `-Dexec.args="--targets targets.csv --dry-run"`) can cause PowerShell to mis-parse the argument and produce an `Unknown lifecycle phase` error.
 
-### Run — execute (performs real account-changing blocks)
+### Run   execute (performs real account-changing blocks)
 
 ```bash
 mvn exec:java "-Dexec.args=--targets targets.csv --execute"
 ```
 
-Read [Safety & Responsible Use](#safety--responsible-use) before using this. `--dry-run` and `--execute` cannot be combined — the CLI rejects that.
+Read [Safety & Responsible Use](#safety--responsible-use) before using this. `--dry-run` and `--execute` cannot be combined   the CLI rejects that.
 
 ### Alternative: run the built jar directly
 
@@ -166,9 +166,9 @@ java -cp target/classes com.hygiene.automation.Main --targets targets.csv --dry-
 
 ### Output
 
-- **Console** — per-target progress, including step-by-step diagnostic logging inside `BlockActionPerformer` (element details, click confirmations) and a final processing summary.
-- **`logs/results.csv`** — structured, per-target results (`EXECUTED`, `WOULD_EXECUTE`, `SKIPPED`, `FAILED`) with timestamps, for later auditing.
-- **`logs/screenshots/`** — a screenshot is captured after the options menu opens and again on any failure, to make DOM/locator issues easy to diagnose without re-running.
+- **Console**   per-target progress, including step-by-step diagnostic logging inside `BlockActionPerformer` (element details, click confirmations) and a final processing summary.
+- **`logs/results.csv`**   structured, per-target results (`EXECUTED`, `WOULD_EXECUTE`, `SKIPPED`, `FAILED`) with timestamps, for later auditing.
+- **`logs/screenshots/`**   a screenshot is captured after the options menu opens and again on any failure, to make DOM/locator issues easy to diagnose without re-running.
 
 ### View coverage report
 

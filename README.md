@@ -67,8 +67,8 @@ This tool interacts with a live, third-party platform using non-official browser
 ## Architecture
 
 The application follows a layered processing pipeline:
+<img width="1855" height="848" alt="architecture" src="https://github.com/user-attachments/assets/a4aa3df2-edbe-4555-b8fd-f3035fcbb73c" />
 
-<img width="3513" height="1592" alt="mermaid-diagram" src="https://github.com/user-attachments/assets/4a233bdb-bcbe-4426-9f7f-9dd800d03f49" />
 
 ```text
 CLI / Configuration

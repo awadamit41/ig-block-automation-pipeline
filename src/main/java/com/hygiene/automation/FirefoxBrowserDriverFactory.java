@@ -1,28 +1,24 @@
 package com.hygiene.automation;
 
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.edge.EdgeDriver;
-import org.openqa.selenium.edge.EdgeOptions;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
 
-public class EdgeBrowserDriverFactory
+public class FirefoxBrowserDriverFactory
     implements BrowserDriverFactory {
 
-    private final WebDriverCreator<EdgeOptions> driverCreator;
+    private final WebDriverCreator<FirefoxOptions> driverCreator;
 
-    public EdgeBrowserDriverFactory() {
-        this(EdgeDriver::new);
+    public FirefoxBrowserDriverFactory() {
+        this(FirefoxDriver::new);
     }
 
-    EdgeBrowserDriverFactory(
-        WebDriverCreator<EdgeOptions> driverCreator
-    ) {
-
+    FirefoxBrowserDriverFactory(WebDriverCreator<FirefoxOptions> driverCreator) {
         if (driverCreator == null) {
             throw new IllegalArgumentException(
                 "WebDriver creator cannot be null."
             );
         }
-
         this.driverCreator = driverCreator;
     }
 
@@ -35,16 +31,14 @@ public class EdgeBrowserDriverFactory
             );
         }
 
-        EdgeOptions options = new EdgeOptions();
+        FirefoxOptions options = new FirefoxOptions();
 
         String userProfile =
             System.getProperty("user.home")
             + java.io.File.separator
             + config.getProfileDirectory();
 
-        options.addArguments(
-            "--user-data-dir=" + userProfile
-        );
+        options.addArguments("-profile", userProfile);
 
         return driverCreator.create(options);
     }

@@ -76,10 +76,12 @@ public class AppConfig {
     public String getBrowser() {
         String browser = getRequired("browser").toLowerCase();
 
-        if (!browser.equals("edge")) {
+        if (!browser.equals("edge")
+        && !browser.equals("chrome")
+        && !browser.equals("firefox")) {
             throw new IllegalArgumentException(
                 "Unsupported browser: " + browser
-                + ". Supported browser: edge."
+                + ". Supported browsers: edge, chrome, firefox."
             );
         }
 

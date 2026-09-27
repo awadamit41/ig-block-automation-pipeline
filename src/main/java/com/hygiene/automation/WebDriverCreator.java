@@ -1,10 +1,9 @@
 package com.hygiene.automation;
 
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.edge.EdgeOptions;
 
 @FunctionalInterface
-public interface WebDriverCreator {
+public interface WebDriverCreator<T> {
 
-    WebDriver create(EdgeOptions options);
+    WebDriver create(T options);
 }

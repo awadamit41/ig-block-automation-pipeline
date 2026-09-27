@@ -400,7 +400,7 @@ class AppConfigTest {
         Path configFile =
             createConfig(
                 """
-                browser=chrome
+                browser=safari
                 target.file=targets.csv
                 log.file=logs/results.csv
                 profile.directory=test-profile
@@ -414,6 +414,11 @@ class AppConfigTest {
                 configFile.toString()
             );
 
+        assertThrows(
+            IllegalArgumentException.class,
+            config::getBrowser
+        );
+
         IllegalArgumentException exception =
             assertThrows(
                 IllegalArgumentException.class,
@@ -421,7 +426,7 @@ class AppConfigTest {
             );
 
         assertEquals(
-            "Unsupported browser: chrome. Supported browser: edge.",
+            "Unsupported browser: safari. Supported browsers: edge, chrome, firefox.",
             exception.getMessage()
         );
     }

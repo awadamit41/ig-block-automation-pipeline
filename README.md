@@ -170,6 +170,11 @@ java -cp target/classes com.hygiene.automation.Main --targets targets.csv --dry-
 - **`logs/results.csv`** — structured, per-target results (`EXECUTED`, `WOULD_EXECUTE`, `SKIPPED`, `FAILED`) with timestamps, for later auditing.
 - **`logs/screenshots/`** — a screenshot is captured after the options menu opens and again on any failure, to make DOM/locator issues easy to diagnose without re-running.
 
+### Browser Support
+- Microsoft Edge
+- Google Chrome
+- Mozilla Firefox
+
 ### View coverage report
 
 After `mvn clean verify`, open:

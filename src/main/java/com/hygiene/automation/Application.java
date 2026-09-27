@@ -11,7 +11,9 @@ public class Application {
 
     public Application() {
         this(
-            new EdgeBrowserDriverFactory(),
+            config -> BrowserDriverFactoryProvider
+                .forBrowser(config.getBrowser())
+                .create(config),
             "config.properties"
         );
     }
@@ -64,6 +66,15 @@ public class Application {
 
             String browser =
                 config.getBrowser();
+            
+            BrowserDriverFactory factory =
+                browserDriverFactory;
+
+            if (factory == null) {
+                factory =
+                    BrowserDriverFactoryProvider
+                        .forBrowser(browser);
+            }
 
             String targetFile =
                 config.getTargetFile();
@@ -94,7 +105,7 @@ public class Application {
             );
 
             driver =
-                browserDriverFactory.create(config);
+                factory.create(config);
 
             System.out.println(
                 "Browser started successfully."

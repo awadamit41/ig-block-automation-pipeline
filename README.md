@@ -18,7 +18,7 @@ The project focuses on reliable target ingestion, profile navigation, profile ve
 
 ## Features, Quality & CI
 
-The project uses automated quality gates through GitHub Actions.
+The project uses automated quality gates through GitHub Actions. 
 
 - Java 25
 - Maven build
